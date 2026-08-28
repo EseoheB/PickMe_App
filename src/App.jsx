@@ -6,7 +6,7 @@ import {
   ArrowUpRight, ArrowDownLeft, Sparkles, Bell,
   Cpu, PersonStanding, Users, Clapperboard, Camera, Disc3, Laugh, PenTool,
   Heart, MessageCircle, Send, MessageSquare, ArrowLeft,
-  Share2, Link2, Bookmark, KeyRound, Check,
+  Link2, Bookmark, KeyRound, Check,
   Aperture, Lightbulb, Drama,
 } from "lucide-react";
 
@@ -26,6 +26,8 @@ const THEME = {
   green: "#4E9A6C",
   red: "#DD3B3B",
 };
+
+const ICONS = import.meta.env.BASE_URL + "icons/";
 
 const MONO = "'SFMono-Regular','Consolas','Liberation Mono',monospace";
 const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
@@ -131,31 +133,14 @@ async function safeSet(key, value) {
   } catch (e) {}
 }
 
-function CircuitBackground({ opacity = 0.35 }) {
+function CircuitBackground({ style }) {
   return (
-    <svg
-      className="absolute pointer-events-none"
-      style={{ top: 0, left: 0, width: 160, height: 220, opacity, zIndex: 0 }}
-      viewBox="0 0 160 220"
-      fill="none"
-    >
-      {[
-        "M4 4 L4 40 L20 56 L20 90", "M20 4 L20 24 L40 44 L40 80 L60 100",
-        "M40 4 L40 20 L60 40 L60 70", "M60 4 L60 30 L80 50 L80 120",
-        "M80 4 L80 16 L100 36 L100 90", "M100 4 L100 26 L120 46 L120 100",
-        "M4 90 L20 90 L36 106 L36 140", "M36 4 L36 60 L56 80",
-      ].map((d, i) => (
-        <path key={i} d={d} stroke="#4C86C6" strokeWidth="1.2" opacity={0.5 - i * 0.04} />
-      ))}
-      {[[20, 90], [40, 80], [60, 100], [80, 120], [100, 90], [36, 140], [60, 70], [120, 100]].map(
-        ([cx, cy], i) => (
-          <circle key={i} cx={cx} cy={cy} r={i % 3 === 0 ? 3.5 : 2} fill={i % 3 === 0 ? "#1E3A5F" : "#4C86C6"} />
-        )
-      )}
-      {[[40, 44], [80, 50], [100, 36], [36, 106]].map(([x, y], i) => (
-        <rect key={i} x={x - 3} y={y - 3} width={6} height={6} fill="#2C5A8A" />
-      ))}
-    </svg>
+    <img
+      src={ICONS + "circuit.png"}
+      alt=""
+      className="absolute pointer-events-none select-none"
+      style={{ top: 0, left: 0, width: 150, zIndex: 0, ...style }}
+    />
   );
 }
 
@@ -325,19 +310,19 @@ function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, o
         <span style={{ fontFamily: SANS, fontSize: 12, color: c, fontWeight: 700, letterSpacing: "0.05em" }}>{tagOf(creator)}</span>
       </div>
       <div className="flex items-center gap-3 px-3.5 pt-2.5">
-        <button onClick={() => onToggleLike(post.id)} aria-label="Like" className="flex items-center justify-center rounded-full" style={{ width: 34, height: 34, background: liked ? THEME.red : THEME.surfaceRaised }}>
-          <Heart size={17} color={liked ? "#fff" : THEME.textSecondary} fill={liked ? "#fff" : "none"} />
+        <button onClick={() => onToggleLike(post.id)} aria-label="Like" className="flex items-center justify-center" style={{ width: 30, height: 30 }}>
+          <img src={ICONS + "like.png"} alt="Like" style={{ width: 30, height: 30, filter: liked ? "none" : "grayscale(1) opacity(0.45)" }} />
         </button>
-        <button onClick={() => onOpenComments(post, creator)} aria-label="Comments" className="relative flex items-center justify-center rounded-full" style={{ width: 34, height: 34, background: THEME.gold }}>
-          <MessageCircle size={16} color="#fff" />
+        <button onClick={() => onOpenComments(post, creator)} aria-label="Comments" className="relative flex items-center justify-center" style={{ width: 30, height: 30 }}>
+          <img src={ICONS + "comment.png"} alt="Comments" style={{ width: 30, height: 30 }} />
           {commentCount > 0 && (
-            <span className="absolute flex items-center justify-center rounded-full" style={{ top: -4, right: -4, minWidth: 16, height: 16, padding: "0 3px", background: THEME.red, color: "#fff", fontSize: 9, fontWeight: 700 }}>
+            <span className="absolute flex items-center justify-center rounded-full" style={{ top: -4, right: -6, minWidth: 16, height: 16, padding: "0 3px", background: THEME.red, color: "#fff", fontSize: 9, fontWeight: 700 }}>
               {commentCount}
             </span>
           )}
         </button>
-        <button onClick={() => onShare(post, creator)} aria-label="Share">
-          <Share2 size={18} color={THEME.textSecondary} />
+        <button onClick={() => onShare(post, creator)} aria-label="Share" className="flex items-center justify-center" style={{ width: 26, height: 26 }}>
+          <img src={ICONS + "share.png"} alt="Share" style={{ width: 26, height: 26 }} />
         </button>
         <div className="flex-1" />
         <button onClick={() => onToggleSave(post.id)} aria-label="Save">
@@ -588,7 +573,7 @@ export default function PickMeApp() {
         transactions: [{ id: Math.random().toString(36).slice(2), type: "debit", amount: 50, note: "Pick-Plus subscription", ts: Date.now() }, ...b.transactions],
       }));
       setProfile((p) => ({ ...p, subscribed: true, pickFee: 10 }));
-      pushToast("Pick-Plus active. You get Picked for $10 and keep 80%.");
+      pushToast("Pick-Plus active. You now earn $8 every time you're Picked.");
     } else {
       setProfile((p) => ({ ...p, subscribed: false, pickFee: 5 }));
       pushToast("Pick-Plus cancelled. You get Picked for $5 and keep $3.");
@@ -832,8 +817,8 @@ export default function PickMeApp() {
             onBank={() => setScreen("bank")}
             right={
               <>
-                <button onClick={() => setScreen("search")} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-                  <Search size={15} color={THEME.textSecondary} />
+                <button onClick={() => setScreen("search")} className="flex items-center justify-center" style={{ width: 28, height: 28 }}>
+                  <img src={ICONS + "search.png"} alt="Search" style={{ width: 28, height: 28 }} />
                 </button>
                 <button onClick={() => setScreen("chats")} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
                   <MessageSquare size={15} color={THEME.textSecondary} />
@@ -944,8 +929,9 @@ function ProfileOverlay({ creator, onClose, onPick, following, onToggleFollow })
           <X size={16} color={THEME.textSecondary} />
         </button>
       </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-        <div className="flex items-start justify-between mb-1">
+      <div className="flex-1 overflow-y-auto px-5 py-4 relative">
+        <CircuitBackground style={{ top: 30, opacity: 0.85 }} />
+        <div className="relative z-10 flex items-start justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="rounded-full flex items-center justify-center" style={{ width: 52, height: 52, background: c + "26", border: "1px solid " + c + "55" }}>
               <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 17, color: c }}>{initials(creator.name)}</span>
@@ -963,17 +949,19 @@ function ProfileOverlay({ creator, onClose, onPick, following, onToggleFollow })
           </div>
         </div>
 
-        <ProfessionTabRow professions={creator.professions} active={null} />
+        <div className="relative z-10">
+          <ProfessionTabRow professions={creator.professions} active={null} />
+        </div>
 
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
-        <div style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>{creator.bio}</div>
+        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
+        <div className="relative z-10" style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>{creator.bio}</div>
 
-        <button onClick={() => onPick(creator)} className="w-full rounded-full py-2.5 flex items-center justify-center gap-1.5 mb-6" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 13.5 }}>
+        <button onClick={() => onPick(creator)} className="relative z-10 w-full rounded-full py-2.5 flex items-center justify-center gap-1.5 mb-6" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 13.5 }}>
           Pick <span style={{ fontFamily: MONO }}>{money(creator.pickFee)}</span>
         </button>
 
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>POSTS</div>
-        <div className="grid grid-cols-2 gap-2.5">
+        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>POSTS</div>
+        <div className="relative z-10 grid grid-cols-2 gap-2.5">
           {creator.posts.map((p) => (
             <div key={p.id} className="rounded-xl p-3 flex flex-col justify-end" style={{ height: 100, background: "linear-gradient(135deg," + c + "22," + c + "05)", border: "1px solid " + c + "30" }}>
               <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{p.caption.slice(0, 60)}...</span>
@@ -1258,7 +1246,7 @@ function SearchScreen({ savedPosts, onOpenProfile, onOpenComments, onSelectProfe
         <>
           <div className="px-4 pt-2 pb-2 flex-shrink-0">
             <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border }}>
-              <Search size={15} color={THEME.textMuted} />
+              <img src={ICONS + "search.png"} alt="" style={{ width: 18, height: 18 }} />
               <input
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -1395,7 +1383,7 @@ function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
       <TopBar title="Vault" />
       <div className="px-4 pt-3 pb-1 flex-shrink-0">
         <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
-          <Search size={14} color={THEME.textMuted} />
+          <img src={ICONS + "search.png"} alt="" style={{ width: 18, height: 18 }} />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -1470,7 +1458,7 @@ function BankScreen({ bank, profile, onTopUp, onSubscribeToggle, onSimulatePick,
           <div>
             <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
             <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
-              {profile.subscribed ? "Active — get Picked for $10, keep 80%" : "$50/month — get Picked for $10, keep 80% (vs. $5 kept $3 unsubscribed)"}
+              {profile.subscribed ? "Active — you earn $8 every time you're Picked" : "$50/month — earn $8 per Pick instead of $3"}
             </div>
           </div>
           <button
@@ -1542,8 +1530,9 @@ function MyProfileScreen({ profile, bank, pickedCount, onSettings, onOpenPicked 
           <Settings size={15} color={THEME.textSecondary} />
         </button>
       } />
-      <div className="flex-1 overflow-y-auto px-5 py-5">
-        <div className="flex items-start justify-between mb-1">
+      <div className="flex-1 overflow-y-auto px-5 py-5 relative">
+        <CircuitBackground style={{ top: 30, opacity: 0.85 }} />
+        <div className="relative z-10 flex items-start justify-between mb-1">
           <div className="flex items-center gap-3">
             <div className="rounded-full flex items-center justify-center" style={{ width: 52, height: 52, background: c + "26", border: "1px solid " + c + "55" }}>
               <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 17, color: c }}>{initials(profile.name)}</span>
@@ -1565,12 +1554,14 @@ function MyProfileScreen({ profile, bank, pickedCount, onSettings, onOpenPicked 
           </button>
         </div>
 
-        <ProfessionTabRow professions={profile.professions} active={null} />
+        <div className="relative z-10">
+          <ProfessionTabRow professions={profile.professions} active={null} />
+        </div>
 
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
-        <div style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 20 }}>{profile.bio}</div>
+        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
+        <div className="relative z-10" style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 20 }}>{profile.bio}</div>
 
-        <div className="grid grid-cols-2 gap-3 mb-5">
+        <div className="relative z-10 grid grid-cols-2 gap-3 mb-5">
           <div className="rounded-xl px-4 py-3" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
             <div style={{ color: THEME.textMuted, fontSize: 11 }}>Your Pick fee</div>
             <div style={{ fontFamily: MONO, color: THEME.textPrimary, fontSize: 18, fontWeight: 700, marginTop: 2 }}>{money(profile.pickFee)}</div>
@@ -1581,11 +1572,11 @@ function MyProfileScreen({ profile, bank, pickedCount, onSettings, onOpenPicked 
           </div>
         </div>
 
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>YOUR POSTS</div>
-        <div className="flex flex-col items-center justify-center gap-2 py-8 rounded-xl" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
-          <Plus size={18} color={THEME.textMuted} />
+        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>YOUR POSTS</div>
+        <button className="relative z-10 w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
+          <img src={ICONS + "plus.png"} alt="Add" style={{ width: 26, height: 26 }} />
           <span style={{ color: THEME.textMuted, fontSize: 12 }}>Share your first post</span>
-        </div>
+        </button>
       </div>
     </>
   );
@@ -1609,7 +1600,7 @@ function SettingsScreen({ profile, onSubscribeToggle, onToggleAutoAccept, onSimu
           <div>
             <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
             <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
-              {profile.subscribed ? "Active — get Picked for $10, keep 80%" : "$50/month — get Picked for $10, keep 80%. Unsubscribed: $5, keep $3"}
+              {profile.subscribed ? "Active — you earn $8 every time you're Picked" : "$50/month — earn $8 per Pick instead of $3"}
             </div>
           </div>
           <button onClick={onSubscribeToggle} className="rounded-full px-4 py-2" style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12 }}>
