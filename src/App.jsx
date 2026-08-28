@@ -1,124 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  Home, Search, Wallet, FolderLock, User, Settings, X, Mic, MicOff,
-  Video, VideoOff, PhoneOff, Minimize2, Maximize2, Lock,
-  ChevronRight, Plus, LogOut, FileText, Music2, Film, Download,
-  ArrowUpRight, ArrowDownLeft, Sparkles, Bell,
-  Cpu, PersonStanding, Users, Clapperboard, Camera, Disc3, Laugh, PenTool,
-  Heart, MessageCircle, Send, MessageSquare, ArrowLeft,
-  Link2, Bookmark, KeyRound, Check,
-  Aperture, Lightbulb, Drama,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
 
-const THEME = {
-  bg: "#DCDBE2",
-  surface: "#FFFFFF",
-  surfaceRaised: "#F1F0F5",
-  border: "#CFCED6",
-  borderSoft: "#E2E1E7",
-  textPrimary: "#17151D",
-  textSecondary: "#5B5966",
-  textMuted: "#8B8994",
-  gold: "#C08A3E",
-  goldDark: "#8A6A2E",
-  pink: "#D9527A",
-  blue: "#4C86C6",
-  green: "#4E9A6C",
-  red: "#DD3B3B",
-};
+const FONT_BODY = "'Outfit', sans-serif";
+const FONT_DISPLAY = "'Dancing Script', cursive";
 
-const ICONS = import.meta.env.BASE_URL + "icons/";
-
-const MONO = "'SFMono-Regular','Consolas','Liberation Mono',monospace";
-const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif";
-
-const PROFESSIONS = [
-  "Software Engineer", "Musician", "Dancer", "Choreographer", "Content Creator",
-  "Actor", "Photographer", "Music Producer", "Comedian", "Illustrator",
-  "Cinematographer", "Director of Photography", "Gaffer", "Camera Man", "Movie Director",
-];
-
-const PROFESSION_ICONS = {
-  "Software Engineer": Cpu,
-  "Musician": Music2,
-  "Dancer": PersonStanding,
-  "Choreographer": Users,
-  "Content Creator": Video,
-  "Actor": Drama,
-  "Photographer": Camera,
-  "Music Producer": Disc3,
-  "Comedian": Laugh,
-  "Illustrator": PenTool,
-  "Cinematographer": Film,
-  "Director of Photography": Aperture,
-  "Gaffer": Lightbulb,
-  "Camera Man": Video,
-  "Movie Director": Clapperboard,
-};
-
-const PROFESSION_TILE_COLORS = ["#D9527A", "#C08A3E"];
-
-const AVATAR_COLORS = ["#C08A3E", "#4C86C6", "#4E9A6C", "#9B5FA0", "#D9527A", "#3E9E9E"];
-
-function avatarColor(seed) {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = seed.charCodeAt(i) + ((h << 5) - h);
-  return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
-}
-
-function initials(name) {
-  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
-}
-
-function money(n) {
-  const sign = n < 0 ? "-" : "";
-  return sign + "$" + Math.abs(n).toFixed(2);
-}
-
-function timeAgo(ts) {
-  const s = Math.floor((Date.now() - ts) / 1000);
-  if (s < 60) return "just now";
-  if (s < 3600) return Math.floor(s / 60) + "m ago";
-  if (s < 86400) return Math.floor(s / 3600) + "h ago";
-  return Math.floor(s / 86400) + "d ago";
-}
-
-const MOCK_CREATORS = [
-  { id: "c1", name: "Reva Okonkwo", professions: ["Musician", "Music Producer"], bio: "Making low end feel good since 2016.", pickFee: 60, subscribed: true, picked: 214, posts: [
-    { id: "p1", caption: "New low end arrangement I have been sitting on for weeks. Finally happy with it.", likes: 128 },
-    { id: "p2", caption: "Studio session running long tonight, worth it though.", likes: 64 },
-  ]},
-  { id: "c2", name: "Theo Marsh", professions: ["Software Engineer"], bio: "Backend systems, occasional rants about queues.", pickFee: 5, subscribed: false, picked: 42, posts: [
-    { id: "p3", caption: "Refactored our onboarding flow this week. Cut signup drop-off noticeably.", likes: 37 },
-  ]},
-  { id: "c3", name: "Ines Duarte", professions: ["Dancer", "Choreographer"], bio: "Contemporary and street, open to collabs.", pickFee: 35, subscribed: true, picked: 158, posts: [
-    { id: "p4", caption: "Rehearsal footage from this week, still cleaning up the transitions.", likes: 91 },
-    { id: "p5", caption: "Booked a piece for a short film. More soon.", likes: 73 },
-  ]},
-  { id: "c4", name: "Marcus Bell", professions: ["Actor", "Content Creator"], bio: "Theater trained, camera curious.", pickFee: 5, subscribed: false, picked: 67, posts: [
-    { id: "p6", caption: "Callback went well. Waiting is the hardest part of this job.", likes: 52 },
-  ]},
-  { id: "c5", name: "Priya Nandan", professions: ["Photographer"], bio: "Portraits and street work, based downtown.", pickFee: 45, subscribed: true, picked: 190, posts: [
-    { id: "p7", caption: "Golden hour shoot from yesterday, client loved the contact sheet.", likes: 140 },
-    { id: "p8", caption: "Behind the scenes from today's shoot, natural light only.", likes: 58 },
-  ]},
-  { id: "c6", name: "Jonah Wexler", professions: ["Comedian", "Content Creator"], bio: "Ten minutes of new material a month, no exceptions.", pickFee: 5, subscribed: false, picked: 31, posts: [
-    { id: "p9", caption: "Tried five new jokes at the open mic last night. Two survived.", likes: 29 },
-  ]},
-  { id: "c7", name: "Sana Rhee", professions: ["Illustrator", "Content Creator"], bio: "Character design and visual development.", pickFee: 50, subscribed: true, picked: 122, posts: [
-    { id: "p10", caption: "Character sheet for a personal project, three more to go.", likes: 84 },
-  ]},
-  { id: "c8", name: "Diego Salas", professions: ["Software Engineer", "Musician"], bio: "Writing code by day, synths by night.", pickFee: 5, subscribed: false, picked: 19, posts: [
-    { id: "p11", caption: "Small tool I built to sync my drum patterns to a metronome track.", likes: 22 },
-  ]},
-];
-
-const MOCK_COMMENTS = [
-  { author: "Jordan K.", text: "This is incredible, following now." },
-  { author: "Sam R.", text: "The talent here is unreal." },
-  { author: "Alex P.", text: "Been waiting for something like this from you." },
-];
-
+// ─── Persistence ─────────────────────────────────────────────────────────────
 async function safeGet(key) {
   try {
     const r = await window.storage.get(key, false);
@@ -133,1503 +18,1265 @@ async function safeSet(key, value) {
   } catch (e) {}
 }
 
-function CircuitBackground({ style }) {
+function money(n) {
+  const sign = n < 0 ? "-" : "";
+  return sign + "$" + Math.abs(n).toFixed(2);
+}
+function today() {
+  return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+// ─── Circuit Board SVG Background ────────────────────────────────────────────
+function CircuitBg({ opacity = 0.18 }) {
   return (
-    <img
-      src={ICONS + "circuit.png"}
-      alt=""
-      className="absolute pointer-events-none select-none"
-      style={{ top: 0, left: 0, width: 150, zIndex: 0, ...style }}
-    />
+    <svg className="pointer-events-none absolute inset-0 w-full h-full" style={{ opacity }}>
+      <defs>
+        <pattern id="circuit" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+          <circle cx="4" cy="4" r="2.5" fill="#4DA6D6" />
+          <circle cx="40" cy="4" r="2.5" fill="#4DA6D6" />
+          <circle cx="76" cy="4" r="2.5" fill="#4DA6D6" />
+          <circle cx="4" cy="40" r="2.5" fill="#4DA6D6" />
+          <circle cx="40" cy="40" r="4" fill="none" stroke="#4DA6D6" strokeWidth="1.5" />
+          <circle cx="76" cy="40" r="2.5" fill="#4DA6D6" />
+          <circle cx="4" cy="76" r="2.5" fill="#4DA6D6" />
+          <circle cx="40" cy="76" r="2.5" fill="#4DA6D6" />
+          <circle cx="76" cy="76" r="2.5" fill="#4DA6D6" />
+          <line x1="4" y1="4" x2="40" y2="4" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="4" y1="4" x2="4" y2="40" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="40" y1="4" x2="40" y2="40" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="76" y1="4" x2="76" y2="40" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="40" y1="40" x2="76" y2="40" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="4" y1="76" x2="40" y2="76" stroke="#4DA6D6" strokeWidth="1" />
+          <line x1="76" y1="40" x2="76" y2="76" stroke="#4DA6D6" strokeWidth="1" />
+          <rect x="36" y="36" width="8" height="8" fill="none" stroke="#4DA6D6" strokeWidth="1" />
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#circuit)" />
+    </svg>
   );
 }
 
-function Chip({ active, children, onClick, small }) {
-  return (
-    <button
-      onClick={onClick}
-      className={"rounded-full whitespace-nowrap " + (small ? "px-3 py-1 text-xs" : "px-4 py-1.5 text-sm")}
-      style={{
-        background: active ? THEME.gold : "transparent",
-        color: active ? "#fff" : THEME.textSecondary,
-        border: "1px solid " + (active ? THEME.gold : THEME.border),
-        fontFamily: SANS,
-        fontWeight: 500,
-      }}
-    >
-      {children}
-    </button>
-  );
+// ─── Professions ──────────────────────────────────────────────────────────────
+const PROFESSIONS = [
+  { id: "actor", label: "Actor", color: "#E91E8C", icon: "🎭" },
+  { id: "musician", label: "Musician", color: "#C8A455", icon: "🎵" },
+  { id: "software-engineer", label: "Software engineer", color: "#C2185B", icon: "⌨️" },
+  { id: "cinematographer", label: "Cinematographer", color: "#A0813C", icon: "🎬" },
+  { id: "director", label: "Movie Director", color: "#7B1FA2", icon: "🎥" },
+  { id: "gaffer", label: "Gaffer", color: "#455A64", icon: "💡" },
+  { id: "camera-man", label: "Camera Man", color: "#1565C0", icon: "📷" },
+  { id: "music-producer", label: "Music Producer", color: "#558B2F", icon: "🎧" },
+  { id: "dop", label: "Director of Photography", color: "#4E342E", icon: "📽️" },
+];
+function profById(id) {
+  return PROFESSIONS.find((p) => p.id === id) || PROFESSIONS[0];
 }
 
-function Avatar({ name, size = 44 }) {
-  const c = avatarColor(name);
+// ─── Bottom Nav ───────────────────────────────────────────────────────────────
+function BottomNav({ screen, goto }) {
+  const tabs = [
+    { id: "feed", icon: "🏠", label: "Feed" },
+    { id: "vault", icon: "🗃️", label: "Vault" },
+    { id: "picked", icon: "📹", label: "Picked" },
+    { id: "user-profile", icon: "👤", label: "Profile" },
+    { id: "settings", icon: "⚙️", label: "Settings" },
+  ];
   return (
-    <div
-      className="flex items-center justify-center rounded-full flex-shrink-0"
-      style={{ width: size, height: size, background: c + "26", color: c, border: "1px solid " + c + "55", fontFamily: SANS, fontWeight: 700, fontSize: size * 0.36 }}
-    >
-      {initials(name)}
-    </div>
-  );
-}
-
-function ProfessionTabRow({ professions, active, onSelect, showAll, counts }) {
-  return (
-    <div className="flex gap-3.5 px-4 py-3 overflow-x-auto flex-shrink-0">
-      {showAll && (
-        <button onClick={() => onSelect("All")} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 60 }}>
-          <div
-            className="flex items-center justify-center"
-            style={{
-              width: 48, height: 48, borderRadius: 14,
-              background: active === "All" ? THEME.textPrimary : THEME.surface,
-              boxShadow: "0 1px 3px rgba(23,21,29,0.12)",
-            }}
-          >
-            <Sparkles size={20} color={active === "All" ? "#fff" : THEME.textSecondary} />
-          </div>
-          <span style={{ fontFamily: SANS, fontSize: 10.5, color: active === "All" ? THEME.textPrimary : THEME.textMuted, fontWeight: active === "All" ? 700 : 500 }}>All</span>
+    <div className="flex border-t border-gray-200 bg-white/90 backdrop-blur-sm flex-shrink-0">
+      {tabs.map((t) => (
+        <button
+          key={t.id}
+          onClick={() => goto(t.id)}
+          className={`flex-1 flex flex-col items-center py-2 gap-0.5 transition-all ${
+            screen === t.id ? "text-[#E91E8C]" : "text-gray-400"
+          }`}
+        >
+          <span className="text-xl">{t.icon}</span>
+          <span className="text-[10px] font-medium">{t.label}</span>
         </button>
-      )}
-      {professions.map((p, i) => {
-        const Icon = PROFESSION_ICONS[p] || Sparkles;
-        const color = PROFESSION_TILE_COLORS[i % 2];
-        const isActive = active === p;
-        return (
-          <button key={p} onClick={() => onSelect && onSelect(p)} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 60 }}>
-            <div
-              className="flex items-center justify-center"
-              style={{
-                width: 48, height: 48, borderRadius: 14,
-                background: color,
-                boxShadow: isActive ? "0 0 0 2px " + THEME.textPrimary + ", 0 2px 6px rgba(23,21,29,0.18)" : "0 1px 3px rgba(23,21,29,0.15)",
-              }}
-            >
-              <Icon size={21} color="#fff" strokeWidth={2} />
-            </div>
-            <span
-              className="truncate w-full text-center"
-              style={{ fontFamily: SANS, fontSize: 10, color: isActive ? THEME.textPrimary : THEME.textMuted, fontWeight: isActive ? 700 : 500 }}
-            >
-              {p}
-            </span>
-            {counts && (
-              <span style={{ fontFamily: SANS, fontSize: 9, color: THEME.textMuted }}>{counts[p] || 0} posts</span>
-            )}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function Toast({ toasts }) {
-  return (
-    <div className="fixed left-0 right-0 flex flex-col items-center gap-2 z-50 px-4" style={{ top: 14 }}>
-      {toasts.map((t) => (
-        <div key={t.id} className="px-4 py-2 rounded-lg text-sm" style={{ background: THEME.textPrimary, color: "#fff", fontFamily: SANS, maxWidth: 340, boxShadow: "0 6px 20px rgba(23,21,29,0.35)" }}>
-          {t.text}
-        </div>
       ))}
     </div>
   );
 }
 
-function TopBar({ title, balance, onBank, right }) {
+// ─── Post Card ────────────────────────────────────────────────────────────────
+function PostCard({ post, liked, onLike, onProfile, onComment, onSave, saved, onSend, commentCount }) {
+  const prof = profById(post.professionId);
+  const [commentText, setCommentText] = useState("");
+
+  function send() {
+    if (!commentText.trim()) return;
+    onSend(commentText.trim());
+    setCommentText("");
+  }
+
   return (
-    <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft, background: THEME.surface }}>
-      <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 20, color: THEME.textPrimary }}>
-        {title || "PickMe"}
+    <div className="relative bg-[#EBE7E2] rounded-2xl overflow-hidden shadow-sm mb-4">
+      <div className="relative h-72 overflow-hidden bg-gray-300">
+        <img src={post.img} alt={post.name} className="w-full h-full object-cover" />
+        <div className="absolute inset-0">
+          <CircuitBg opacity={0.12} />
+        </div>
       </div>
-      <div className="flex items-center gap-2">
-        {right}
-        {balance !== undefined && (
-          <button onClick={onBank} className="flex items-center gap-1.5 rounded-full px-3 py-1.5" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
-            <Wallet size={14} color={THEME.gold} />
-            <span style={{ fontFamily: MONO, fontSize: 13, color: THEME.textPrimary, fontVariantNumeric: "tabular-nums" }}>{money(balance)}</span>
+
+      <div className="relative px-3 py-2">
+        <CircuitBg opacity={0.1} />
+        <div className="relative flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={onLike} className="transition-transform active:scale-90">
+              <span className="text-2xl">{liked ? "❤️" : "🤍"}</span>
+            </button>
+            <button className="transition-transform active:scale-90 opacity-70">
+              <span className="text-xl">🔗</span>
+            </button>
+            <button onClick={onComment} className="relative transition-transform active:scale-90">
+              <span className="text-xl">💬</span>
+              <span className="absolute -top-1 -right-2 bg-gray-500 text-white text-[9px] font-bold rounded-full min-w-4 h-4 px-0.5 flex items-center justify-center">
+                {commentCount}
+              </span>
+            </button>
+          </div>
+          <button onClick={onSave} className="transition-transform active:scale-90">
+            <span className="text-xl">{saved ? "📌" : "📍"}</span>
           </button>
+        </div>
+
+        <div className="relative flex items-center gap-2 mt-2">
+          <button onClick={onProfile}>
+            <img
+              src={post.avatar}
+              alt={post.name}
+              className="w-8 h-8 rounded-full object-cover border-2"
+              style={{ borderColor: prof.color }}
+            />
+          </button>
+          <button onClick={onProfile} className="text-sm text-gray-800" style={{ fontFamily: FONT_DISPLAY, fontSize: 16 }}>
+            {post.name}
+          </button>
+          <span className="ml-auto text-[10px] font-semibold text-white px-2 py-0.5 rounded-full" style={{ background: prof.color }}>
+            {prof.label}
+          </span>
+        </div>
+
+        <div className="relative flex items-center gap-2 mt-2">
+          <div className="w-6 h-6 rounded-full bg-gray-300 overflow-hidden flex-shrink-0">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=40&h=40&fit=crop&auto=format" alt="me" className="w-full h-full object-cover" />
+          </div>
+          <input
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && send()}
+            placeholder="Write a comment..."
+            className="flex-1 bg-white/60 rounded-full px-3 py-1 text-xs text-gray-700 border border-gray-200 outline-none"
+          />
+          <button onClick={send} className="text-xs font-semibold text-[#E91E8C] flex-shrink-0">Send</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Mock feed data ───────────────────────────────────────────────────────────
+const FEED_POSTS = [
+  {
+    id: 1,
+    img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=500&fit=crop&auto=format",
+    name: "Aria Chen",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&auto=format",
+    professionId: "actor",
+    bio: "Passionate storyteller, SAG-AFTRA member. Available for auditions & Picks.",
+    picked: 3,
+    commentsBase: 127,
+    caption: "On set today, feeling grateful for this journey.",
+  },
+  {
+    id: 2,
+    img: "https://images.unsplash.com/photo-1484876065684-b683cf17d276?w=400&h=500&fit=crop&auto=format",
+    name: "Marcus Reyes",
+    avatar: "https://images.unsplash.com/photo-1484876065684-b683cf17d276?w=80&h=80&fit=crop&auto=format",
+    professionId: "musician",
+    bio: "Singer-songwriter. New EP dropping soon.",
+    picked: 12,
+    commentsBase: 50,
+    caption: "Studio session ran late but the new track is worth it.",
+  },
+  {
+    id: 3,
+    img: "https://images.unsplash.com/photo-1587620962725-abab7fe55159?w=400&h=500&fit=crop&auto=format",
+    name: "Dev Sharma",
+    avatar: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?w=80&h=80&fit=crop&auto=format",
+    professionId: "software-engineer",
+    bio: "Backend engineer, open to consulting Picks.",
+    picked: 5,
+    commentsBase: 18,
+    caption: "Shipped a gnarly refactor this week, onboarding is 3x faster now.",
+  },
+  {
+    id: 4,
+    img: "https://images.unsplash.com/photo-1606143412458-acc5f86de897?w=400&h=500&fit=crop&auto=format",
+    name: "Lena Volta",
+    avatar: "https://images.unsplash.com/photo-1606143412458-acc5f86de897?w=80&h=80&fit=crop&auto=format",
+    professionId: "cinematographer",
+    bio: "Cinematographer, shot on 16mm whenever I can.",
+    picked: 8,
+    commentsBase: 84,
+    caption: "Golden hour on location, the light cooperated for once.",
+  },
+];
+
+const MOCK_COMMENT_SEED = [
+  { id: "s1", user: "JackB", text: "This is amazing! 🔥" },
+  { id: "s2", user: "Sara_M", text: "When is your next session?" },
+];
+
+// ─── Screens ──────────────────────────────────────────────────────────────────
+function SignupScreen({ onSignIn }) {
+  const [email, setEmail] = useState("");
+  const [pass, setPass] = useState("");
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] relative overflow-hidden">
+      <CircuitBg opacity={0.12} />
+      <div className="relative flex flex-col flex-1 px-6 pt-16 pb-8 overflow-y-auto">
+        <div className="flex flex-col items-center mb-12">
+          <div className="w-20 h-20 rounded-3xl bg-[#E91E8C] flex items-center justify-center shadow-xl mb-4">
+            <span className="text-5xl">◆</span>
+          </div>
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 42, color: "#1a1a2e", lineHeight: 1 }}>PickMe</h1>
+          <p className="text-sm text-gray-500 mt-1 font-light tracking-wide">Discover. Connect. Get Picked.</p>
+        </div>
+
+        <div className="flex flex-col gap-4 w-full">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Email</label>
+            <input
+              className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#E91E8C]/30"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Password</label>
+            <input
+              className="w-full bg-white/80 border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-800 outline-none focus:ring-2 focus:ring-[#E91E8C]/30"
+              type="password"
+              placeholder="••••••••"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+            />
+          </div>
+          <button
+            onClick={() => onSignIn(email)}
+            className="w-full bg-[#E91E8C] text-white font-semibold rounded-xl py-3.5 text-sm shadow-lg shadow-pink-200 active:scale-95 transition-all mt-2"
+          >
+            Create Account
+          </button>
+          <div className="relative flex items-center">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="mx-3 text-xs text-gray-400">or</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+          <button
+            onClick={() => onSignIn(email)}
+            className="w-full bg-white border border-gray-200 text-gray-700 font-semibold rounded-xl py-3.5 text-sm active:scale-95 transition-all"
+          >
+            Sign In
+          </button>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-8">
+          By signing up you agree to our <span className="text-[#E91E8C] font-medium">Terms</span> &amp;{" "}
+          <span className="text-[#E91E8C] font-medium">Privacy Policy</span>
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ProfileSetupScreen({ draft, setDraft, onOpenProfessions, onContinue }) {
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] relative overflow-hidden">
+      <CircuitBg opacity={0.12} />
+      <div className="relative flex flex-col flex-1 px-6 pt-12 pb-8 overflow-y-auto">
+        <h2 className="text-2xl font-bold text-gray-800 mb-6">User profile setup</h2>
+
+        <div className="flex flex-col items-center mb-8">
+          <div className="relative">
+            <div className="w-28 h-28 rounded-3xl overflow-hidden bg-gray-300 shadow-lg">
+              <img
+                src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&auto=format"
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <button className="absolute -bottom-2 -right-2 w-9 h-9 bg-[#E91E8C] rounded-full flex items-center justify-center shadow-md">
+              <span className="text-white text-base">📷</span>
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">Profile Pic</p>
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Unique User Name</label>
+            <input
+              className="w-full bg-[#E8E4DE] border border-[#4DA6D6]/30 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#4DA6D6]/30"
+              placeholder="@yourhandle"
+              value={draft.username}
+              onChange={(e) => setDraft((d) => ({ ...d, username: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Profession</label>
+            <button
+              onClick={onOpenProfessions}
+              className="w-full bg-[#E8E4DE] border border-[#4DA6D6]/30 rounded-xl px-4 py-3 text-sm text-left flex items-center justify-between"
+              style={{ color: draft.professions.length ? "#374151" : "#9ca3af" }}
+            >
+              <span>
+                {draft.professions.length
+                  ? draft.professions.map((id) => profById(id).label).join(", ")
+                  : "Pick your profession(s)"}
+              </span>
+              <span>›</span>
+            </button>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1 block">Page / Bio</label>
+            <textarea
+              className="w-full bg-[#E8E4DE] border border-[#4DA6D6]/30 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#4DA6D6]/30 resize-none h-20"
+              placeholder="Tell the world what you do..."
+              value={draft.bio}
+              onChange={(e) => setDraft((d) => ({ ...d, bio: e.target.value }))}
+            />
+          </div>
+        </div>
+
+        <button
+          onClick={onContinue}
+          className="w-full bg-[#E91E8C] text-white font-semibold rounded-xl py-3.5 text-sm shadow-lg shadow-pink-200 active:scale-95 transition-all mt-6"
+        >
+          Continue →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ProfessionSelectScreen({ draft, setDraft, onDone }) {
+  const toggle = (id) =>
+    setDraft((d) => ({
+      ...d,
+      professions: d.professions.includes(id) ? d.professions.filter((x) => x !== id) : [...d.professions, id],
+    }));
+
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] relative overflow-hidden">
+      <CircuitBg opacity={0.1} />
+      <div className="relative flex flex-col flex-1 px-6 pt-12 pb-8 overflow-y-auto">
+        <h2 className="text-2xl font-bold text-gray-800 mb-3">Profession List</h2>
+        <p className="text-sm text-gray-600 bg-white/60 rounded-xl p-3 mb-6 leading-snug">
+          You are allowed to pick more than one but the fewer you select, the more your chances of being seen.
+        </p>
+
+        <div className="flex flex-col gap-2 flex-1">
+          {PROFESSIONS.map((p) => {
+            const active = draft.professions.includes(p.id);
+            return (
+              <button
+                key={p.id}
+                onClick={() => toggle(p.id)}
+                className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all border ${
+                  active ? "border-transparent text-white shadow-md" : "border-[#4DA6D6]/20 bg-white/40 text-gray-700"
+                }`}
+                style={active ? { background: p.color } : {}}
+              >
+                <span className="text-lg">{p.icon}</span>
+                {p.label}
+                {active && <span className="ml-auto text-white">✓</span>}
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={onDone}
+          className="w-full bg-[#E91E8C] text-white font-semibold rounded-xl py-3.5 text-sm shadow-lg shadow-pink-200 active:scale-95 transition-all mt-6"
+        >
+          {draft.professions.length > 0 ? `Done (${draft.professions.length} selected)` : "Skip"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FeedScreen({ posts, likedIds, toggleLike, savedIds, toggleSave, comments, addComment, onOpenComments, onOpenProfile }) {
+  const [activeTab, setActiveTab] = useState(null);
+  const [search, setSearch] = useState("");
+  const tabProfessions = PROFESSIONS.slice(0, 4);
+
+  const filtered = posts.filter((p) => {
+    if (activeTab && p.professionId !== activeTab) return false;
+    if (!search) return true;
+    const q = search.toLowerCase();
+    return p.name.toLowerCase().includes(q) || profById(p.professionId).label.toLowerCase().includes(q);
+  });
+
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] overflow-hidden">
+      <div className="relative bg-[#F0EDE8] pt-4 pb-3 px-4 shadow-sm flex-shrink-0">
+        <CircuitBg opacity={0.08} />
+        <div className="relative">
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 28, color: "#1a1a2e" }}>Unique Username</h1>
+          <div className="flex gap-3 mt-3 overflow-x-auto pb-1">
+            {tabProfessions.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setActiveTab((t) => (t === p.id ? null : p.id))}
+                className="flex flex-col items-center gap-1 flex-shrink-0 transition-all"
+              >
+                <div
+                  className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md transition-all"
+                  style={{ background: p.color, boxShadow: activeTab === p.id ? `0 0 0 2px white, 0 0 0 4px ${p.color}` : undefined }}
+                >
+                  <span className="text-2xl">{p.icon}</span>
+                </div>
+                <span className="text-[10px] text-gray-600 font-medium">{p.label}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">General Feed</div>
+
+          <div className="mt-2 relative">
+            <input
+              className="w-full bg-white/70 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#4DA6D6]/30"
+              placeholder="Search users and career types..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
+        {filtered.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            liked={likedIds.includes(post.id)}
+            onLike={() => toggleLike(post.id)}
+            saved={savedIds.includes(post.id)}
+            onSave={() => toggleSave(post.id)}
+            onProfile={() => onOpenProfile(post)}
+            onComment={() => onOpenComments(post)}
+            onSend={(text) => addComment(post.id, text)}
+            commentCount={post.commentsBase + (comments[post.id] || []).length}
+          />
+        ))}
+        {filtered.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+            <span className="text-4xl mb-3">🔍</span>
+            <p className="text-sm">No results for "{search}"</p>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function BottomNav({ screen, setScreen, subscribed }) {
-  const items = [
-    { id: "feed", icon: Home, label: "Feed" },
-    { id: "search", icon: Search, label: "Search" },
-    { id: "vault", icon: FolderLock, label: "Vault" },
-    { id: "bank", icon: Wallet, label: "Bank" },
-    { id: "profile", icon: User, label: "You" },
-  ];
-  return (
-    <div className="flex items-center justify-around flex-shrink-0" style={{ borderTop: "1px solid " + THEME.borderSoft, background: THEME.surface, paddingTop: 8, paddingBottom: 8 }}>
-      {items.map((it) => {
-        const active = screen === it.id;
-        const Icon = it.icon;
-        return (
-          <button key={it.id} onClick={() => setScreen(it.id)} className="flex flex-col items-center gap-1 px-2">
-            <Icon size={21} color={active ? THEME.pink : THEME.textMuted} strokeWidth={active ? 2.3 : 1.8} />
-            <span style={{ fontFamily: SANS, fontSize: 10, color: active ? THEME.pink : THEME.textMuted, fontWeight: active ? 700 : 500 }}>{it.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+function UserProfileScreen({
+  creator,
+  isSelf,
+  following,
+  onToggleFollow,
+  onPick,
+  onEditProfile,
+  posts,
+  likedIds,
+  toggleLike,
+  savedIds,
+  toggleSave,
+  comments,
+  onOpenComments,
+  addComment,
+}) {
+  const profileProfessions = isSelf ? creator.professions.map(profById) : [profById(creator.professionId)];
+  const myPosts = posts.filter((p) => (isSelf ? false : p.id === creator.id));
 
-function tagOf(creator) {
-  return "#" + creator.professions[0].replace(/ /g, "");
-}
-
-function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, onOpenComments, commentCount, saved, onToggleSave, onShare }) {
-  const c = avatarColor(creator.name);
-  const likeCount = post.likes + (liked ? 1 : 0);
   return (
-    <div className="flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft, background: THEME.surface }}>
-      <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-3">
-        <button onClick={() => onOpenProfile(creator)}><Avatar name={creator.name} size={36} /></button>
-        <div className="flex-1 min-w-0 text-left" onClick={() => onOpenProfile(creator)}>
-          <div style={{ fontFamily: SANS, fontWeight: 700, fontSize: 14, color: THEME.textPrimary }}>{creator.name}</div>
-          <div style={{ fontFamily: SANS, fontSize: 11.5, color: THEME.textMuted }}>{creator.professions[0]}</div>
-        </div>
-        <button
-          onClick={() => onPick(creator)}
-          className="flex items-center gap-1 rounded-full px-3 py-1.5 flex-shrink-0"
-          style={{ background: THEME.gold, color: "#fff" }}
-        >
-          <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 12.5 }}>Pick</span>
-          <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700 }}>{money(creator.pickFee)}</span>
-        </button>
-      </div>
-      <div
-        className="w-full flex items-center justify-center"
-        style={{ aspectRatio: "4 / 5", background: "linear-gradient(135deg," + c + "33," + c + "08)" }}
-      >
-        <span style={{ fontFamily: SANS, fontSize: 12, color: c, fontWeight: 700, letterSpacing: "0.05em" }}>{tagOf(creator)}</span>
-      </div>
-      <div className="flex items-center gap-3 px-3.5 pt-2.5">
-        <button onClick={() => onToggleLike(post.id)} aria-label="Like" className="flex items-center justify-center" style={{ width: 30, height: 30 }}>
-          <img src={ICONS + "like.png"} alt="Like" style={{ width: 30, height: 30, filter: liked ? "none" : "grayscale(1) opacity(0.45)" }} />
-        </button>
-        <button onClick={() => onOpenComments(post, creator)} aria-label="Comments" className="relative flex items-center justify-center" style={{ width: 30, height: 30 }}>
-          <img src={ICONS + "comment.png"} alt="Comments" style={{ width: 30, height: 30 }} />
-          {commentCount > 0 && (
-            <span className="absolute flex items-center justify-center rounded-full" style={{ top: -4, right: -6, minWidth: 16, height: 16, padding: "0 3px", background: THEME.red, color: "#fff", fontSize: 9, fontWeight: 700 }}>
-              {commentCount}
-            </span>
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] overflow-hidden">
+      <div className="relative bg-[#EBE7E2] pt-4 pb-4 px-4 flex-shrink-0">
+        <CircuitBg opacity={0.12} />
+        <div className="relative">
+          <h1 style={{ fontFamily: FONT_DISPLAY, fontSize: 26, color: "#1a1a2e" }}>{creator.name}</h1>
+          <div className="flex items-center gap-3 mt-2">
+            <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 shadow-md" style={{ borderColor: profileProfessions[0]?.color || "#E91E8C" }}>
+              <img src={creator.avatar} alt="Profile" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-800">{creator.picked}</span>
+                <span className="text-xs text-gray-500">picked</span>
+                <div className="ml-auto flex gap-2 items-center">
+                  <button className="w-7 h-7 bg-[#C8A455] rounded-full flex items-center justify-center shadow">
+                    <span className="text-white font-bold text-lg leading-none">+</span>
+                  </button>
+                  {isSelf ? (
+                    <button onClick={onEditProfile} className="px-3 py-1 rounded-full text-xs font-bold border bg-white text-gray-700 border-gray-300">
+                      Edit
+                    </button>
+                  ) : (
+                    <button
+                      onClick={onToggleFollow}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border transition-all ${
+                        following ? "bg-gray-200 text-gray-600 border-gray-300" : "bg-[#E91E8C] text-white border-[#E91E8C]"
+                      }`}
+                    >
+                      {following ? "Following" : "Follow"}
+                    </button>
+                  )}
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                About · {profileProfessions.map((p) => p.label).join(", ")}
+              </p>
+              <p className="text-xs text-gray-600 leading-snug">{creator.bio}</p>
+            </div>
+          </div>
+
+          <div className="flex gap-3 mt-4 overflow-x-auto pb-1">
+            {profileProfessions.map((p) => (
+              <div key={p.id} className="flex flex-col items-center gap-1 flex-shrink-0">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow" style={{ background: p.color }}>
+                  <span className="text-xl">{p.icon}</span>
+                </div>
+                <span className="text-[10px] text-gray-600 font-medium">{p.label}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">{isSelf ? "Your Feed" : "User Feed"}</div>
+          <div className="mt-2 relative">
+            <input
+              className="w-full bg-white/70 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-600 outline-none"
+              placeholder="Search posts..."
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          </div>
+
+          {!isSelf && (
+            <button
+              onClick={() => onPick(creator)}
+              className="mt-3 w-full bg-[#E91E8C] text-white font-semibold rounded-xl py-2.5 text-sm shadow-lg shadow-pink-200 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
+              <span>📹</span> Pick Session — $10
+            </button>
           )}
-        </button>
-        <button onClick={() => onShare(post, creator)} aria-label="Share" className="flex items-center justify-center" style={{ width: 26, height: 26 }}>
-          <img src={ICONS + "share.png"} alt="Share" style={{ width: 26, height: 26 }} />
-        </button>
-        <div className="flex-1" />
-        <button onClick={() => onToggleSave(post.id)} aria-label="Save">
-          <Bookmark size={18} color={saved ? THEME.gold : THEME.textSecondary} fill={saved ? THEME.gold : "none"} />
-        </button>
+        </div>
       </div>
-      <div className="px-3.5 pt-1.5" style={{ fontFamily: SANS, fontSize: 12.5, color: THEME.textPrimary, fontWeight: 700 }}>
-        {likeCount} likes
+
+      <div className="flex-1 overflow-y-auto px-4 pt-4 pb-4">
+        {myPosts.map((post) => (
+          <PostCard
+            key={post.id}
+            post={post}
+            liked={likedIds.includes(post.id)}
+            onLike={() => toggleLike(post.id)}
+            saved={savedIds.includes(post.id)}
+            onSave={() => toggleSave(post.id)}
+            onProfile={() => {}}
+            onComment={() => onOpenComments(post)}
+            onSend={(text) => addComment(post.id, text)}
+            commentCount={post.commentsBase + (comments[post.id] || []).length}
+          />
+        ))}
+        {isSelf && (
+          <div className="flex flex-col items-center justify-center gap-2 py-10 rounded-xl border-2 border-dashed border-gray-300 text-gray-400">
+            <span className="text-2xl">📤</span>
+            <span className="text-xs font-medium">Share your first post</span>
+          </div>
+        )}
       </div>
-      <div className="px-3.5 pt-1 pb-1.5" style={{ fontFamily: SANS, fontSize: 13, color: THEME.textSecondary, lineHeight: 1.5 }}>
-        <span style={{ color: THEME.textPrimary, fontWeight: 700, marginRight: 6 }}>{creator.name}</span>
-        {post.caption} <span style={{ color: THEME.blue }}>{tagOf(creator)}</span>
-      </div>
-      <button onClick={() => onOpenComments(post, creator)} className="block px-3.5 pb-3.5" style={{ fontFamily: SANS, fontSize: 12, color: THEME.textMuted }}>
-        View all {commentCount} comments
-      </button>
     </div>
   );
 }
 
-export default function PickMeApp() {
+function PickedScreen({ activeCall, onEndCall, onOpenVault }) {
+  const [muted, setMuted] = useState(false);
+  const [cameraOff, setCameraOff] = useState(false);
+  const [countdown, setCountdown] = useState(600);
+  const [comment, setComment] = useState("");
+  const [comments, setComments] = useState(MOCK_COMMENT_SEED);
+
+  useEffect(() => {
+    if (!activeCall) return;
+    const t = setInterval(() => setCountdown((c) => (c > 0 ? c - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [activeCall]);
+
+  if (!activeCall) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center gap-3 px-8 text-center bg-[#1a0a3d]">
+        <span className="text-4xl">📹</span>
+        <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 24, color: "white" }}>Picked</h2>
+        <p className="text-sm text-white/60">No live Pick session. Visit a profile and tap Pick Session to start one.</p>
+      </div>
+    );
+  }
+
+  const mins = Math.floor(countdown / 60).toString().padStart(2, "0");
+  const secs = (countdown % 60).toString().padStart(2, "0");
+
+  const sendComment = () => {
+    if (!comment.trim()) return;
+    setComments((prev) => [...prev, { id: Date.now(), user: "You", text: comment }]);
+    setComment("");
+  };
+
+  const participants = [4, 8, 10];
+
+  return (
+    <div className="flex flex-col flex-1 relative bg-[#1a0a3d] overflow-hidden">
+      <div className="relative flex-1 overflow-hidden">
+        <img
+          src="https://images.unsplash.com/photo-1674932668403-33398b81c92f?w=400&h=700&fit=crop&auto=format"
+          alt="Video call"
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-[#1a0a3d]/30" />
+
+        <div className="absolute top-0 left-0 right-0 pt-4 px-4">
+          <div className="flex items-center justify-between">
+            <h2 style={{ fontFamily: FONT_DISPLAY, fontSize: 22, color: "white" }}>{activeCall.name}</h2>
+            <div className="flex items-center gap-1">
+              {participants.map((n, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <img src={activeCall.avatar} alt="" className="w-10 h-10 rounded-full object-cover border-2 border-white/40" />
+                  <span className="text-[9px] text-white/70 mt-0.5">{n}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center mt-2">
+            <div className="bg-black/40 backdrop-blur-sm rounded-xl px-4 py-1.5 border border-white/10">
+              <span className="text-white font-mono font-bold text-lg">{mins}:{secs}</span>
+              <span className="text-white/50 text-xs ml-2">remaining</span>
+            </div>
+          </div>
+
+          <div className="mt-3 relative">
+            <input
+              className="w-full bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl pl-9 pr-3 py-2 text-sm text-white placeholder-white/40 outline-none"
+              placeholder="Search past sessions..."
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 text-sm">🔍</span>
+          </div>
+        </div>
+
+        <div className="absolute bottom-28 left-3">
+          <div className="w-20 h-28 rounded-xl overflow-hidden border-2 border-white/40 shadow-xl">
+            <img
+              src="https://images.unsplash.com/photo-1536766768598-e09213fdcf22?w=80&h=120&fit=crop&auto=format"
+              alt="You"
+              className="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+
+        <div className="absolute bottom-28 left-24 right-4 max-h-32 overflow-y-auto flex flex-col gap-1">
+          {comments.map((c) => (
+            <div key={c.id} className="bg-black/40 backdrop-blur-sm rounded-lg px-2 py-1 text-xs">
+              <span className="text-[#E91E8C] font-semibold">{c.user}</span>{" "}
+              <span className="text-white/90">{c.text}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="bg-[#150833] px-4 pt-3 pb-6 flex-shrink-0">
+        <div className="flex items-center gap-2 mb-3">
+          <input
+            className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder-white/40 outline-none"
+            placeholder="Start typing..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendComment()}
+          />
+          <button onClick={sendComment} className="text-[#E91E8C] text-sm font-semibold">Send</button>
+        </div>
+
+        <div className="flex items-center justify-around">
+          <button className="flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <span className="text-xl">👥</span>
+            </div>
+            <span className="text-[10px] text-white/50">Conference</span>
+          </button>
+          <button onClick={() => setCameraOff((c) => !c)} className="flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <span className="text-xl">{cameraOff ? "🚫" : "📷"}</span>
+            </div>
+            <span className="text-[10px] text-white/50">Camera</span>
+          </button>
+          <button onClick={onEndCall} className="flex flex-col items-center gap-1">
+            <div className="w-14 h-14 rounded-full bg-red-500 flex items-center justify-center shadow-lg shadow-red-900">
+              <span className="text-2xl">📞</span>
+            </div>
+            <span className="text-[10px] text-white/50">End</span>
+          </button>
+          <button onClick={() => setMuted((m) => !m)} className="flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <span className="text-xl">{muted ? "🔇" : "🎙️"}</span>
+            </div>
+            <span className="text-[10px] text-white/50">Mic</span>
+          </button>
+          <button onClick={onOpenVault} className="flex flex-col items-center gap-1">
+            <div className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center">
+              <span className="text-xl">🗃️</span>
+            </div>
+            <span className="text-[10px] text-white/50">Vault</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const VAULT_FILES_DEFAULT = [
+  { id: 1, name: "Headshots_2024.zip", type: "zip", size: "12.4 MB", locked: false, date: "Aug 12" },
+  { id: 2, name: "Demo_Reel_Final.mp4", type: "video", size: "248 MB", locked: true, date: "Jul 28" },
+  { id: 3, name: "Resume_Actor.pdf", type: "pdf", size: "340 KB", locked: false, date: "Aug 1" },
+  { id: 4, name: "Script_ReadThrough.docx", type: "doc", size: "1.2 MB", locked: true, date: "Aug 20" },
+  { id: 5, name: "Mood_Board.pptx", type: "ppt", size: "8.8 MB", locked: false, date: "Aug 25" },
+];
+const FILE_ICONS = { zip: "📦", video: "🎥", pdf: "📄", doc: "📝", ppt: "📊" };
+
+function VaultScreen({ files, onUpload }) {
+  const [search, setSearch] = useState("");
+  const [workspaceMsg, setWorkspaceMsg] = useState("");
+  const [messages, setMessages] = useState([
+    { id: 1, user: "Aria Chen", text: "Here's the script I mentioned 📄", time: "2:14 PM" },
+    { id: 2, user: "You", text: "Got it, reviewing now!", time: "2:15 PM" },
+  ]);
+
+  const filtered = files.filter((f) => f.name.toLowerCase().includes(search.toLowerCase()));
+
+  const sendMsg = () => {
+    if (!workspaceMsg.trim()) return;
+    setMessages((prev) => [...prev, { id: Date.now(), user: "You", text: workspaceMsg, time: "Now" }]);
+    setWorkspaceMsg("");
+  };
+
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] overflow-hidden">
+      <div className="relative bg-[#EBE7E2] pt-4 pb-4 px-4 shadow-sm flex-shrink-0">
+        <CircuitBg opacity={0.08} />
+        <div className="relative">
+          <h2 className="text-xl font-bold text-gray-800">🗃️ Vault</h2>
+          <p className="text-xs text-gray-400 mt-0.5">Shared files cannot be downloaded without uploader approval</p>
+          <div className="mt-3 relative">
+            <input
+              className="w-full bg-white/70 border border-gray-200 rounded-xl pl-9 pr-3 py-2 text-sm text-gray-700 outline-none focus:ring-2 focus:ring-[#4DA6D6]/30"
+              placeholder="Search docs, files..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-4">
+        <div className="px-4 pt-4">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Files</h3>
+          <div className="flex flex-col gap-2">
+            {filtered.map((f) => (
+              <div key={f.id} className="bg-white/70 rounded-xl px-4 py-3 flex items-center gap-3 border border-gray-100 shadow-sm">
+                <span className="text-2xl">{FILE_ICONS[f.type]}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-800 truncate">{f.name}</p>
+                  <p className="text-xs text-gray-400">{f.size} · {f.date}</p>
+                </div>
+                {f.locked ? (
+                  <div className="flex items-center gap-1 text-[10px] text-amber-600 bg-amber-50 border border-amber-200 rounded-full px-2 py-0.5">
+                    <span>🔒</span> Locked
+                  </div>
+                ) : (
+                  <span className="text-[10px] text-[#E91E8C] font-semibold bg-pink-50 border border-pink-200 rounded-full px-2 py-0.5">
+                    Download
+                  </span>
+                )}
+              </div>
+            ))}
+            {filtered.length === 0 && <p className="text-sm text-gray-400 text-center py-6">No files found</p>}
+          </div>
+        </div>
+
+        <div className="px-4 mt-6">
+          <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Work Space</h3>
+          <div className="bg-[#2D1B69] rounded-2xl overflow-hidden shadow-xl">
+            <div className="px-4 pt-4 pb-2 flex flex-col gap-2 min-h-32">
+              {messages.map((m) => (
+                <div key={m.id} className={`flex flex-col ${m.user === "You" ? "items-end" : "items-start"}`}>
+                  <div className={`rounded-xl px-3 py-2 text-xs max-w-[80%] ${m.user === "You" ? "bg-[#E91E8C] text-white" : "bg-white/10 text-white/90"}`}>
+                    {m.user !== "You" && <span className="block text-[10px] text-white/50 mb-0.5">{m.user}</span>}
+                    {m.text}
+                  </div>
+                  <span className="text-[9px] text-white/30 mt-0.5">{m.time}</span>
+                </div>
+              ))}
+            </div>
+            <div className="px-3 pb-3 flex items-center gap-2">
+              <input
+                className="flex-1 bg-white/10 border border-white/10 rounded-xl px-3 py-2 text-xs text-white placeholder-white/30 outline-none"
+                placeholder="Start typing..."
+                value={workspaceMsg}
+                onChange={(e) => setWorkspaceMsg(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && sendMsg()}
+              />
+              <button onClick={sendMsg} className="w-8 h-8 rounded-full bg-[#E91E8C] flex items-center justify-center text-white text-sm shadow-md">➤</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-4 mt-4">
+          <button
+            onClick={onUpload}
+            className="w-full border-2 border-dashed border-[#4DA6D6]/40 rounded-2xl py-4 flex flex-col items-center gap-1 text-gray-400 text-sm active:bg-[#4DA6D6]/5 transition-all"
+          >
+            <span className="text-2xl">📤</span>
+            <span className="text-xs font-medium">Upload a file</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen({ profile, bank, onToggleSubscribe, onToggleAutoAccept, onWithdraw, onAddFunds, onLogout }) {
+  return (
+    <div className="flex flex-col flex-1 bg-[#F0EDE8] overflow-hidden">
+      <div className="relative bg-[#EBE7E2] pt-4 pb-4 px-4 shadow-sm flex-shrink-0">
+        <CircuitBg opacity={0.08} />
+        <div className="relative flex items-center gap-3">
+          <div className="w-12 h-12 bg-[#C8A455] rounded-2xl flex items-center justify-center shadow-md">
+            <span className="text-2xl">⚙️</span>
+          </div>
+          <h2 className="text-xl font-bold text-gray-800">Settings</h2>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto pb-4 px-4 pt-4 flex flex-col gap-4">
+        <section className="bg-white/70 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Profile Settings</h3>
+          </div>
+          <div className="flex flex-col divide-y divide-gray-100">
+            {["Username", "Profile Photo", "Bio", "Professions", "Privacy"].map((item) => (
+              <button key={item} className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 active:bg-gray-50 transition-all">
+                <span>{item}</span>
+                <span className="text-gray-300">›</span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-white/70 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pick Settings</h3>
+          </div>
+          <div className="flex flex-col divide-y divide-gray-100">
+            <div className="flex items-center justify-between px-4 py-3">
+              <div>
+                <p className="text-sm text-gray-700">Auto-accept Picks</p>
+                <p className="text-xs text-gray-400">Countdown from 10</p>
+              </div>
+              <button
+                onClick={onToggleAutoAccept}
+                className={`w-11 h-6 rounded-full transition-all relative ${profile.autoAccept ? "bg-[#E91E8C]" : "bg-gray-300"}`}
+              >
+                <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all ${profile.autoAccept ? "left-5" : "left-0.5"}`} />
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl overflow-hidden shadow-lg">
+          <div className="px-4 py-4" style={{ background: "linear-gradient(135deg, #2D1B69 0%, #E91E8C 100%)" }}>
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h3 className="text-white font-bold text-base">Pick-Plus</h3>
+                <p className="text-white/70 text-xs">$50/month subscription</p>
+              </div>
+              <div className="w-12 h-12 bg-[#E91E8C] rounded-2xl flex items-center justify-center shadow">
+                <span className="text-2xl">✨</span>
+              </div>
+            </div>
+            <ul className="text-white/80 text-xs space-y-1 mb-4">
+              <li>✓ Earn $8 every time you're Picked</li>
+              <li>✓ Access Vault &amp; file sharing</li>
+              <li>✓ Priority Post &amp; Direct Messages</li>
+              <li>✓ Higher pay per session</li>
+              <li>✓ Nothing deducted from earnings</li>
+            </ul>
+            <button
+              onClick={onToggleSubscribe}
+              className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                profile.subscribed ? "bg-white/20 text-white border border-white/30" : "bg-white text-[#2D1B69]"
+              }`}
+            >
+              {profile.subscribed ? "✓ Subscribed — Cancel Plan" : "Subscribe to Pick-Plus"}
+            </button>
+          </div>
+        </section>
+
+        <section className="bg-white/70 rounded-2xl overflow-hidden border border-gray-100 shadow-sm">
+          <div className="px-4 py-4 bg-gradient-to-r from-[#C8A455]/20 to-[#C8A455]/5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bank Balance</h3>
+                <p className="text-3xl font-bold text-gray-800 mt-1">{money(bank.balance)}</p>
+              </div>
+              <div className="w-12 h-12 bg-[#C8A455] rounded-2xl flex items-center justify-center shadow-md">
+                <span className="text-2xl">💰</span>
+              </div>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button onClick={onWithdraw} className="flex-1 bg-[#E91E8C] text-white rounded-xl py-2 text-xs font-semibold">Withdraw</button>
+              <button onClick={onAddFunds} className="flex-1 bg-white border border-gray-200 text-gray-700 rounded-xl py-2 text-xs font-semibold">Add Funds</button>
+            </div>
+          </div>
+          <div className="flex flex-col divide-y divide-gray-100">
+            {bank.transactions.map((t) => (
+              <div key={t.id} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-xs font-medium text-gray-700">{t.desc}</p>
+                  <p className="text-[10px] text-gray-400">{t.date}</p>
+                </div>
+                <span className={`text-sm font-bold ${t.amount > 0 ? "text-green-600" : "text-red-500"}`}>
+                  {t.amount > 0 ? "+" : ""}{money(t.amount)}
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <button onClick={onLogout} className="w-full bg-white/60 border border-gray-200 text-red-500 font-semibold rounded-xl py-3 text-sm active:scale-95 transition-all">
+          Sign Out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CommentsSheet({ post, comments, onClose, onSend }) {
+  const [text, setText] = useState("");
+  return (
+    <div className="absolute inset-0 z-30 flex flex-col bg-[#F0EDE8]">
+      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0 border-b border-gray-200 bg-white/70">
+        <button onClick={onClose} className="p-1.5 rounded-full bg-white"><span>✕</span></button>
+        <span className="text-sm font-bold text-gray-800">Comments</span>
+        <div style={{ width: 30 }} />
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
+        {comments.length === 0 && <div className="text-center text-gray-400 text-sm mt-8">No comments yet.</div>}
+        {comments.map((c) => (
+          <div key={c.id} className="text-sm">
+            <span className="font-semibold text-gray-800 mr-1.5">{c.user}</span>
+            <span className="text-gray-600">{c.text}</span>
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-2 px-3 py-3 border-t border-gray-200 bg-white/70 flex-shrink-0">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && text.trim()) {
+              onSend(text.trim());
+              setText("");
+            }
+          }}
+          placeholder="Write a comment..."
+          className="flex-1 rounded-full px-3.5 py-2 bg-white border border-gray-200 text-sm outline-none"
+        />
+        <button
+          onClick={() => {
+            if (text.trim()) {
+              onSend(text.trim());
+              setText("");
+            }
+          }}
+          className="text-sm font-semibold text-[#E91E8C]"
+        >
+          Send
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+export default function App() {
   const [ready, setReady] = useState(false);
   const [profile, setProfile] = useState(null);
-  const [bank, setBank] = useState({ balance: 100, transactions: [] });
-  const [vault, setVault] = useState({ sessions: [] });
-  const [follows, setFollows] = useState([]);
+  const [bank, setBank] = useState({ balance: 0, transactions: [] });
+  const [vaultFiles, setVaultFiles] = useState(VAULT_FILES_DEFAULT);
+  const [followedIds, setFollowedIds] = useState([]);
   const [pickedIds, setPickedIds] = useState([]);
-  const [likedPosts, setLikedPosts] = useState([]);
-  const [savedPosts, setSavedPosts] = useState([]);
-  const [pickRequests, setPickRequests] = useState([]);
+  const [likedIds, setLikedIds] = useState([]);
+  const [savedIds, setSavedIds] = useState([]);
   const [comments, setComments] = useState({});
-  const [commentsFor, setCommentsFor] = useState(null); // {post, creator}
-  const [activeChat, setActiveChat] = useState(null);
-  const [screen, setScreen] = useState("feed");
-  const [activeTab, setActiveTab] = useState("All");
-  const [viewingCreator, setViewingCreator] = useState(null);
-  const [pickTarget, setPickTarget] = useState(null);
-  const [call, setCall] = useState(null); // {creator, phase, seconds, minimized, muted, cameraOff, password, participants}
-  const [callPanel, setCallPanel] = useState(null); // null | "people" | "comments"
-  const [callComments, setCallComments] = useState([]);
-  const [toasts, setToasts] = useState([]);
-  const [authMode, setAuthMode] = useState("signup");
-  const [formName, setFormName] = useState("");
-  const [formBio, setFormBio] = useState("");
-  const [formProfessions, setFormProfessions] = useState([]);
-  const timerRef = useRef(null);
 
-  const pushToast = useCallback((text) => {
-    const id = Math.random().toString(36).slice(2);
-    setToasts((t) => [...t, { id, text }]);
-    setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 2600);
-  }, []);
+  const [screen, setScreen] = useState("signup");
+  const [draft, setDraft] = useState({ username: "", bio: "", professions: [] });
+  const [viewingPost, setViewingPost] = useState(null); // null = self
+  const [activeCall, setActiveCall] = useState(null);
+  const [commentsFor, setCommentsFor] = useState(null);
+
+  const goto = (s) => setScreen(s);
 
   useEffect(() => {
     (async () => {
       const p = await safeGet("profile");
       const b = await safeGet("bank");
-      const v = await safeGet("vault");
-      const f = await safeGet("follows");
+      const v = await safeGet("vaultFiles");
+      const f = await safeGet("followedIds");
       const pk = await safeGet("pickedIds");
-      const sv = await safeGet("savedPosts");
-      const pr = await safeGet("pickRequests");
+      const lk = await safeGet("likedIds");
+      const sv = await safeGet("savedIds");
+      const cm = await safeGet("comments");
       if (p) setProfile(p);
       if (b) setBank(b);
-      if (v) setVault(v);
-      if (f) setFollows(f);
+      if (v) setVaultFiles(v);
+      if (f) setFollowedIds(f);
       if (pk) setPickedIds(pk);
-      if (sv) setSavedPosts(sv);
-      if (pr) setPickRequests(pr);
+      if (lk) setLikedIds(lk);
+      if (sv) setSavedIds(sv);
+      if (cm) setComments(cm);
+      if (p) setScreen("feed");
       setReady(true);
     })();
   }, []);
 
   useEffect(() => { if (profile) safeSet("profile", profile); }, [profile]);
   useEffect(() => { if (ready) safeSet("bank", bank); }, [bank, ready]);
-  useEffect(() => { if (ready) safeSet("vault", vault); }, [vault, ready]);
-  useEffect(() => { if (ready) safeSet("follows", follows); }, [follows, ready]);
+  useEffect(() => { if (ready) safeSet("vaultFiles", vaultFiles); }, [vaultFiles, ready]);
+  useEffect(() => { if (ready) safeSet("followedIds", followedIds); }, [followedIds, ready]);
   useEffect(() => { if (ready) safeSet("pickedIds", pickedIds); }, [pickedIds, ready]);
-  useEffect(() => { if (ready) safeSet("savedPosts", savedPosts); }, [savedPosts, ready]);
-  useEffect(() => { if (ready) safeSet("pickRequests", pickRequests); }, [pickRequests, ready]);
+  useEffect(() => { if (ready) safeSet("likedIds", likedIds); }, [likedIds, ready]);
+  useEffect(() => { if (ready) safeSet("savedIds", savedIds); }, [savedIds, ready]);
+  useEffect(() => { if (ready) safeSet("comments", comments); }, [comments, ready]);
 
-  useEffect(() => {
-    const t = setInterval(() => {
-      setPickRequests((reqs) =>
-        reqs.map((r) => (r.status === "pending" && Date.now() > r.respondBy ? { ...r, status: "expired" } : r))
-      );
-    }, 30000);
-    return () => clearInterval(t);
-  }, []);
+  function finishSignup(email) {
+    setDraft((d) => ({ ...d, email }));
+    goto("profile-setup");
+  }
 
-  useEffect(() => {
-    if (call && call.phase === "live") {
-      timerRef.current = setInterval(() => {
-        setCall((c) => (c ? { ...c, seconds: c.seconds + 1 } : c));
-      }, 1000);
-      return () => clearInterval(timerRef.current);
-    }
-  }, [call && call.phase]);
-
-  function completeSignup() {
-    if (!formName.trim() || formProfessions.length === 0) {
-      pushToast("Add a name and at least one profession to continue.");
-      return;
-    }
+  function finishProfileSetup() {
     setProfile({
-      name: formName.trim(),
-      bio: formBio.trim() || "New on PickMe.",
-      professions: formProfessions,
+      name: draft.username.trim() || "Unique Username",
+      email: draft.email || "",
+      bio: draft.bio.trim() || "New on PickMe.",
+      professions: draft.professions.length ? draft.professions : ["actor"],
       subscribed: false,
-      pickFee: 5,
       autoAccept: false,
-      joinedAt: Date.now(),
     });
-    setBank({ balance: 100, transactions: [{ id: "t0", type: "credit", amount: 100, note: "Welcome credit", ts: Date.now() }] });
-    pushToast("Welcome to PickMe. $100 added so you can try a Pick.");
-  }
-
-  function toggleFollow(creatorId) {
-    setFollows((f) => (f.includes(creatorId) ? f.filter((x) => x !== creatorId) : [...f, creatorId]));
-  }
-
-  function openPick(creator) {
-    if (bank.balance < creator.pickFee) {
-      pushToast("Not enough balance. Top up in Bank first.");
-      return;
-    }
-    setPickTarget(creator);
-  }
-
-  function confirmPick(creator, password) {
-    setPickTarget(null);
-    setBank((b) => ({
-      balance: +(b.balance - creator.pickFee).toFixed(2),
-      transactions: [{ id: Math.random().toString(36).slice(2), type: "debit", amount: creator.pickFee, note: "Pick with " + creator.name, ts: Date.now() }, ...b.transactions],
-    }));
-    setPickedIds((ids) => (ids.includes(creator.id) ? ids : [creator.id, ...ids]));
-    pushToast("You now have instant access to " + creator.name + "'s PickMe page.");
-    setCall({ creator, phase: "connecting", seconds: 0, minimized: false, muted: false, cameraOff: false, password: password || null, participants: [] });
-    setTimeout(() => setCall((c) => (c ? { ...c, phase: "live" } : c)), 1400);
-  }
-
-  function addCallParticipant(creator) {
-    setCall((c) => (c && !c.participants.some((p) => p.id === creator.id) ? { ...c, participants: [...c.participants, creator] } : c));
-  }
-
-  function toggleLike(postId) {
-    setLikedPosts((ids) => (ids.includes(postId) ? ids.filter((x) => x !== postId) : [...ids, postId]));
-  }
-
-  function toggleSave(postId) {
-    setSavedPosts((ids) => {
-      const has = ids.includes(postId);
-      pushToast(has ? "Removed from saved." : "Saved. You can view this anytime but can't download it.");
-      return has ? ids.filter((x) => x !== postId) : [postId, ...ids];
+    setBank({
+      balance: 124.5,
+      transactions: [
+        { id: 1, desc: "Pick Session — Aria Chen", amount: 8.0, date: "Aug 27" },
+        { id: 2, desc: "Pick Session — Marcus R.", amount: 8.0, date: "Aug 25" },
+        { id: 3, desc: "Pick-Plus Subscription", amount: -50.0, date: "Aug 1" },
+        { id: 4, desc: "Pick Session — Dev S.", amount: 3.0, date: "Jul 30" },
+        { id: 5, desc: "Withdrawal to Bank", amount: -60.0, date: "Jul 15" },
+      ],
     });
+    goto("feed");
   }
 
-  function sharePost(post, creator) {
-    pushToast("Link to " + creator.name + "'s post copied. Share it anywhere.");
-  }
-
-  function openComments(post, creator) {
-    setComments((all) =>
-      all[post.id] ? all : { ...all, [post.id]: MOCK_COMMENTS.slice(0, 2).map((c, i) => ({ id: "seed" + i, ...c })) }
-    );
-    setCommentsFor({ post, creator });
-  }
-
+  const toggleLike = useCallback((postId) => {
+    setLikedIds((ids) => (ids.includes(postId) ? ids.filter((x) => x !== postId) : [...ids, postId]));
+  }, []);
+  const toggleSave = useCallback((postId) => {
+    setSavedIds((ids) => (ids.includes(postId) ? ids.filter((x) => x !== postId) : [...ids, postId]));
+  }, []);
   function addComment(postId, text) {
-    if (!text.trim()) return;
     setComments((all) => ({
       ...all,
-      [postId]: [...(all[postId] || []), { id: Math.random().toString(36).slice(2), author: profile.name, text: text.trim() }],
+      [postId]: [...(all[postId] || []), { id: Math.random().toString(36).slice(2), user: profile?.name || "You", text }],
     }));
   }
-
-  function endCall() {
-    if (!call) return;
-    const c = call.creator;
-    setVault((v) => {
-      const existing = v.sessions.find((s) => s.withId === c.id);
-      const newFiles = [
-        { id: Math.random().toString(36).slice(2), type: "video", name: "Session recording", approved: false },
-        { id: Math.random().toString(36).slice(2), type: "doc", name: "Notes from call", approved: true },
-      ];
-      if (existing) {
-        return { sessions: v.sessions.map((s) => (s.withId === c.id ? { ...s, files: [...newFiles, ...s.files] } : s)) };
-      }
-      return { sessions: [{ withId: c.id, withName: c.name, files: newFiles }, ...v.sessions] };
-    });
-    pushToast("Session ended. Files saved to Vault.");
-    setCall(null);
+  function openComments(post) {
+    setCommentsFor(post);
   }
 
-  function simulateIncomingPick() {
-    if (!profile) return;
-    const fee = profile.pickFee;
-    const share = profile.subscribed ? +(fee * 0.8).toFixed(2) : 3;
-    const id = Math.random().toString(36).slice(2);
-    const req = { id, fee, share, createdAt: Date.now(), respondBy: Date.now() + 48 * 3600 * 1000, status: "pending" };
-    setPickRequests((r) => [req, ...r]);
-    if (profile.autoAccept) {
-      pushToast("New Pick request, auto-accepting in a few seconds.");
-      setTimeout(() => acceptPickRequest(id), 4000);
-    } else {
-      pushToast("New Pick request waiting for your response. 48hrs to respond.");
+  function openProfile(post) {
+    setViewingPost(post);
+    goto("user-profile");
+  }
+  function toggleFollow(postId) {
+    setFollowedIds((ids) => (ids.includes(postId) ? ids.filter((x) => x !== postId) : [...ids, postId]));
+  }
+
+  function startPick(post) {
+    setBank((b) => ({
+      balance: +(b.balance - 10).toFixed(2),
+      transactions: [{ id: Math.random().toString(36).slice(2), desc: "Pick Session — " + post.name, amount: -10, date: today() }, ...b.transactions],
+    }));
+    setPickedIds((ids) => (ids.includes(post.id) ? ids : [...ids, post.id]));
+    setActiveCall(post);
+    goto("picked");
+  }
+  function endCall() {
+    setActiveCall(null);
+    goto("feed");
+  }
+
+  function toggleSubscribe() {
+    setProfile((p) => ({ ...p, subscribed: !p.subscribed }));
+    if (!profile.subscribed) {
+      setBank((b) => ({
+        balance: +(b.balance - 50).toFixed(2),
+        transactions: [{ id: Math.random().toString(36).slice(2), desc: "Pick-Plus Subscription", amount: -50, date: today() }, ...b.transactions],
+      }));
     }
   }
-
-  function acceptPickRequest(id) {
-    setPickRequests((reqs) => {
-      const req = reqs.find((r) => r.id === id);
-      if (!req || req.status !== "pending") return reqs;
-      setBank((b) => ({
-        balance: +(b.balance + req.share).toFixed(2),
-        transactions: [{ id: Math.random().toString(36).slice(2), type: "credit", amount: req.share, note: "Picked by a fan, accepted", ts: Date.now() }, ...b.transactions],
-      }));
-      pushToast("Accepted. " + money(req.share) + " added to your Bank.");
-      return reqs.map((r) => (r.id === id ? { ...r, status: "accepted" } : r));
-    });
-  }
-
-  function declinePickRequest(id) {
-    setPickRequests((reqs) => reqs.map((r) => (r.id === id ? { ...r, status: "declined" } : r)));
-    pushToast("Pick request declined.");
-  }
-
   function toggleAutoAccept() {
     setProfile((p) => ({ ...p, autoAccept: !p.autoAccept }));
   }
-
-  function topUp(amount) {
-    setBank((b) => ({
-      balance: +(b.balance + amount).toFixed(2),
-      transactions: [{ id: Math.random().toString(36).slice(2), type: "credit", amount, note: "Balance top up", ts: Date.now() }, ...b.transactions],
-    }));
-    pushToast(money(amount) + " added to your Bank.");
+  function withdraw() {
+    setBank((b) => {
+      const amount = Math.min(50, b.balance);
+      if (amount <= 0) return b;
+      return {
+        balance: +(b.balance - amount).toFixed(2),
+        transactions: [{ id: Math.random().toString(36).slice(2), desc: "Withdrawal to Bank", amount: -amount, date: today() }, ...b.transactions],
+      };
+    });
   }
-
-  function toggleSubscription() {
-    if (!profile.subscribed) {
-      if (bank.balance < 50) {
-        pushToast("Pick-Plus is $50 per month. Top up your Bank first.");
-        return;
-      }
-      setBank((b) => ({
-        balance: +(b.balance - 50).toFixed(2),
-        transactions: [{ id: Math.random().toString(36).slice(2), type: "debit", amount: 50, note: "Pick-Plus subscription", ts: Date.now() }, ...b.transactions],
-      }));
-      setProfile((p) => ({ ...p, subscribed: true, pickFee: 10 }));
-      pushToast("Pick-Plus active. You now earn $8 every time you're Picked.");
-    } else {
-      setProfile((p) => ({ ...p, subscribed: false, pickFee: 5 }));
-      pushToast("Pick-Plus cancelled. You get Picked for $5 and keep $3.");
-    }
+  function addFunds() {
+    setBank((b) => ({
+      balance: +(b.balance + 50).toFixed(2),
+      transactions: [{ id: Math.random().toString(36).slice(2), desc: "Added funds", amount: 50, date: today() }, ...b.transactions],
+    }));
+  }
+  function uploadFile() {
+    setVaultFiles((files) => [
+      { id: Date.now(), name: "New_Upload_" + (files.length + 1) + ".pdf", type: "pdf", size: "1.0 MB", locked: false, date: today() },
+      ...files,
+    ]);
   }
 
   if (!ready) {
     return (
-      <div className="w-full flex items-center justify-center" style={{ height: 520, background: THEME.bg }}>
-        <span style={{ fontFamily: SANS, color: THEME.textMuted, fontSize: 13 }}>Loading PickMe...</span>
+      <div className="w-full flex items-center justify-center" style={{ height: 844, background: "#F0EDE8", fontFamily: FONT_BODY }}>
+        <span className="text-sm text-gray-400">Loading PickMe...</span>
       </div>
     );
   }
 
-  // ---------- AUTH / ONBOARDING ----------
-  if (!profile) {
-    return (
-      <div className="w-full flex flex-col" style={{ height: 620, background: THEME.surface, borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
-        <div className="flex-1 overflow-y-auto px-6 py-8">
-          <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 30, color: THEME.textPrimary }}>PickMe</div>
-          <div style={{ color: THEME.textSecondary, fontSize: 13.5, marginTop: 6, marginBottom: 28 }}>
-            Set up your page. Any profession welcome.
-          </div>
+  const selfCreator = profile
+    ? {
+        id: "me",
+        name: profile.name,
+        avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&auto=format",
+        professions: profile.professions,
+        bio: profile.bio,
+        picked: pickedIds.length,
+      }
+    : null;
 
-          <label style={{ color: THEME.textMuted, fontSize: 12, fontWeight: 600 }}>Display name</label>
-          <input
-            value={formName}
-            onChange={(e) => setFormName(e.target.value)}
-            placeholder="e.g. Alex Rivers"
-            className="w-full rounded-lg px-3 py-2.5 mt-1.5 mb-5"
-            style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 14, outline: "none" }}
-          />
-
-          <label style={{ color: THEME.textMuted, fontSize: 12, fontWeight: 600 }}>Bio</label>
-          <textarea
-            value={formBio}
-            onChange={(e) => setFormBio(e.target.value)}
-            placeholder="One line about what you do"
-            rows={2}
-            className="w-full rounded-lg px-3 py-2.5 mt-1.5 mb-5 resize-none"
-            style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 14, outline: "none" }}
-          />
-
-          <label style={{ color: THEME.textMuted, fontSize: 12, fontWeight: 600 }}>Professions</label>
-          <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 3, marginBottom: 10 }}>
-            Choose fewer for better visibility.
-          </div>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {PROFESSIONS.map((p) => (
-              <Chip
-                key={p}
-                active={formProfessions.includes(p)}
-                onClick={() =>
-                  setFormProfessions((fp) => (fp.includes(p) ? fp.filter((x) => x !== p) : [...fp, p]))
-                }
-              >
-                {p}
-              </Chip>
-            ))}
-          </div>
-
-          <button
-            onClick={completeSignup}
-            className="w-full rounded-full py-3"
-            style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 14.5 }}
-          >
-            Create my page
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // ---------- CALL SCREEN ----------
-  if (call && !call.minimized) {
-    const mm = String(Math.floor(call.seconds / 60)).padStart(2, "0");
-    const ss = String(call.seconds % 60).padStart(2, "0");
-    return (
-      <div className="w-full flex flex-col justify-between relative" style={{ height: 620, background: "#070B14", borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
-        <div className="flex items-center justify-between px-4 pt-4">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: "#00000055" }}>
-            <div style={{ width: 6, height: 6, borderRadius: 999, background: call.phase === "live" ? THEME.red : THEME.textMuted }} />
-            <span style={{ fontFamily: MONO, fontSize: 12, color: "#fff" }}>{call.phase === "live" ? mm + ":" + ss : "connecting"}</span>
-            {call.password && (
-              <span className="flex items-center gap-0.5" style={{ marginLeft: 2 }}>
-                <KeyRound size={11} color={THEME.gold} />
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setCallPanel(callPanel === "people" ? null : "people")} className="p-2 rounded-full" style={{ background: callPanel === "people" ? THEME.gold : "#00000055" }}>
-              <Link2 size={15} color="#fff" />
-            </button>
-            <button onClick={() => setCallPanel(callPanel === "comments" ? null : "comments")} className="p-2 rounded-full" style={{ background: callPanel === "comments" ? THEME.gold : "#00000055" }}>
-              <MessageCircle size={15} color="#fff" />
-            </button>
-            <button onClick={() => setCall((c) => ({ ...c, minimized: true }))} className="p-2 rounded-full" style={{ background: "#00000055" }}>
-              <Minimize2 size={16} color="#fff" />
-            </button>
-          </div>
-        </div>
-
-        {call.participants.length > 0 && (
-          <div className="flex items-center gap-1.5 px-4 pt-3">
-            {call.participants.map((p) => (
-              <div key={p.id} className="rounded-full flex items-center justify-center" style={{ width: 26, height: 26, background: avatarColor(p.name) + "55", border: "1px solid " + avatarColor(p.name) }}>
-                <span style={{ color: "#fff", fontSize: 9, fontWeight: 700 }}>{initials(p.name)}</span>
-              </div>
-            ))}
-            <span style={{ color: "#8A93A3", fontSize: 10.5, marginLeft: 2 }}>in conference</span>
-          </div>
-        )}
-
-        <div className="flex-1 flex items-center justify-center flex-col gap-3">
-          <div
-            className="rounded-full flex items-center justify-center"
-            style={{ width: 96, height: 96, background: avatarColor(call.creator.name) + "33", border: "2px solid " + avatarColor(call.creator.name) + "66" }}
-          >
-            <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 30, color: avatarColor(call.creator.name) }}>{initials(call.creator.name)}</span>
-          </div>
-          <div style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>{call.creator.name}</div>
-          <div style={{ color: "#8A93A3", fontSize: 12.5 }}>{call.phase === "connecting" ? "Connecting..." : "Pick session live"}</div>
-        </div>
-
-        <div
-          className="absolute rounded-xl flex items-center justify-center"
-          style={{ width: 84, height: 112, top: 66, right: 18, background: "#1A2740", border: "1px solid #2A3B57" }}
-        >
-          <span style={{ color: "#5E6C82", fontSize: 10.5 }}>you</span>
-        </div>
-
-        {callPanel === "people" && (
-          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl px-4 pt-4 pb-5" style={{ background: "#12161F", maxHeight: 260, overflowY: "auto" }}>
-            <div className="flex items-center justify-between mb-3">
-              <span style={{ color: "#fff", fontWeight: 700, fontSize: 13.5 }}>Add to conference</span>
-              <button onClick={() => setCallPanel(null)}><X size={16} color="#8A93A3" /></button>
-            </div>
-            {MOCK_CREATORS.filter((c) => follows.includes(c.id) && c.id !== call.creator.id).length === 0 && (
-              <div style={{ color: "#8A93A3", fontSize: 12 }}>Follow people to add them here.</div>
-            )}
-            <div className="flex flex-col gap-1">
-              {MOCK_CREATORS.filter((c) => follows.includes(c.id) && c.id !== call.creator.id).map((c) => {
-                const added = call.participants.some((p) => p.id === c.id);
-                return (
-                  <button key={c.id} onClick={() => addCallParticipant(c)} disabled={added} className="flex items-center gap-2.5 px-2 py-2 rounded-xl">
-                    <Avatar name={c.name} size={30} />
-                    <span style={{ color: "#fff", fontSize: 13, flex: 1, textAlign: "left" }}>{c.name}</span>
-                    {added ? <Check size={15} color={THEME.green} /> : <Plus size={15} color="#8A93A3" />}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {callPanel === "comments" && (
-          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl px-4 pt-4 pb-3 flex flex-col" style={{ background: "#12161F", maxHeight: 260 }}>
-            <div className="flex items-center justify-between mb-3">
-              <span style={{ color: "#fff", fontWeight: 700, fontSize: 13.5 }}>Session comments</span>
-              <button onClick={() => setCallPanel(null)}><X size={16} color="#8A93A3" /></button>
-            </div>
-            <div className="flex-1 overflow-y-auto flex flex-col gap-2 mb-2">
-              {callComments.length === 0 && <div style={{ color: "#8A93A3", fontSize: 12 }}>No comments yet.</div>}
-              {callComments.map((c) => (
-                <div key={c.id} style={{ color: "#fff", fontSize: 12.5 }}>{c.text}</div>
-              ))}
-            </div>
-            <CallCommentInput onSend={(text) => setCallComments((cc) => [...cc, { id: Math.random().toString(36).slice(2), text }])} />
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-4 pb-8 pt-4">
-          <button onClick={() => setCall((c) => ({ ...c, muted: !c.muted }))} className="p-3.5 rounded-full" style={{ background: call.muted ? THEME.red : "#1A2740" }}>
-            {call.muted ? <MicOff size={19} color="#fff" /> : <Mic size={19} color="#fff" />}
-          </button>
-          <button onClick={() => setCall((c) => ({ ...c, cameraOff: !c.cameraOff }))} className="p-3.5 rounded-full" style={{ background: call.cameraOff ? THEME.red : "#1A2740" }}>
-            {call.cameraOff ? <VideoOff size={19} color="#fff" /> : <Video size={19} color="#fff" />}
-          </button>
-          <button onClick={endCall} className="p-4 rounded-full" style={{ background: THEME.red }}>
-            <PhoneOff size={20} color="#fff" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const feedCreators = activeTab === "All" ? MOCK_CREATORS : MOCK_CREATORS.filter((c) => c.professions.includes(activeTab));
-  const feedItems = [];
-  feedCreators.forEach((c) => c.posts.forEach((p) => feedItems.push({ post: p, creator: c })));
+  const viewingSelf = viewingPost === null;
+  const activeCreator = viewingSelf ? selfCreator : viewingPost;
 
   return (
-    <div className="w-full flex flex-col relative" style={{ height: 620, background: THEME.bg, borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
-      <Toast toasts={toasts} />
+    <div
+      className="w-full flex flex-col relative"
+      style={{ height: 844, background: "#F0EDE8", borderRadius: 20, overflow: "hidden", fontFamily: FONT_BODY }}
+    >
+      {screen === "signup" && <SignupScreen onSignIn={finishSignup} />}
 
-      {call && call.minimized && (
-        <button
-          onClick={() => setCall((c) => ({ ...c, minimized: false }))}
-          className="absolute left-3 right-3 flex items-center justify-between px-3.5 py-2.5 rounded-xl z-40"
-          style={{ top: 8, background: THEME.surfaceRaised, border: "1px solid " + THEME.gold }}
-        >
-          <div className="flex items-center gap-2">
-            <div style={{ width: 6, height: 6, borderRadius: 999, background: THEME.red }} />
-            <span style={{ fontSize: 12.5, color: THEME.textPrimary, fontWeight: 600 }}>Pick with {call.creator.name} minimized</span>
-          </div>
-          <Maximize2 size={15} color={THEME.gold} />
-        </button>
+      {screen === "profile-setup" && (
+        <ProfileSetupScreen draft={draft} setDraft={setDraft} onOpenProfessions={() => goto("profession-select")} onContinue={finishProfileSetup} />
       )}
 
-      {viewingCreator && (
-        <ProfileOverlay
-          creator={viewingCreator}
-          onClose={() => setViewingCreator(null)}
-          onPick={openPick}
-          following={follows.includes(viewingCreator.id)}
-          onToggleFollow={() => toggleFollow(viewingCreator.id)}
-        />
-      )}
-
-      {pickTarget && (
-        <PickSheet creator={pickTarget} onCancel={() => setPickTarget(null)} onConfirm={(password) => confirmPick(pickTarget, password)} />
-      )}
-
-      {commentsFor && (
-        <CommentsOverlay
-          post={commentsFor.post}
-          creator={commentsFor.creator}
-          comments={comments[commentsFor.post.id] || []}
-          onClose={() => setCommentsFor(null)}
-          onSubmit={(text) => addComment(commentsFor.post.id, text)}
-        />
-      )}
-
-      {activeChat && (
-        <ChatThread creator={activeChat} onClose={() => setActiveChat(null)} />
+      {screen === "profession-select" && (
+        <ProfessionSelectScreen draft={draft} setDraft={setDraft} onDone={() => goto("profile-setup")} />
       )}
 
       {screen === "feed" && (
-        <>
-          <TopBar
-            balance={bank.balance}
-            onBank={() => setScreen("bank")}
-            right={
-              <>
-                <button onClick={() => setScreen("search")} className="flex items-center justify-center" style={{ width: 28, height: 28 }}>
-                  <img src={ICONS + "search.png"} alt="Search" style={{ width: 28, height: 28 }} />
-                </button>
-                <button onClick={() => setScreen("chats")} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-                  <MessageSquare size={15} color={THEME.textSecondary} />
-                </button>
-              </>
-            }
-          />
-          <ProfessionTabRow professions={PROFESSIONS} active={activeTab} onSelect={setActiveTab} showAll />
-          <div className="flex-1 overflow-y-auto pb-2 flex flex-col">
-            {feedItems.map((item, i) => (
-              <FeedPost
-                key={item.post.id + i}
-                post={item.post}
-                creator={item.creator}
-                onOpenProfile={setViewingCreator}
-                onPick={openPick}
-                liked={likedPosts.includes(item.post.id)}
-                onToggleLike={toggleLike}
-                onOpenComments={openComments}
-                commentCount={(comments[item.post.id] || MOCK_COMMENTS.slice(0, 2)).length}
-                saved={savedPosts.includes(item.post.id)}
-                onToggleSave={toggleSave}
-                onShare={sharePost}
-              />
-            ))}
-            {feedItems.length === 0 && (
-              <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
-                <Sparkles size={22} color={THEME.textMuted} />
-                <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>No posts in this career tab yet.</div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {screen === "search" && (
-        <SearchScreen
-          savedPosts={savedPosts}
-          onOpenProfile={setViewingCreator}
+        <FeedScreen
+          posts={FEED_POSTS}
+          likedIds={likedIds}
+          toggleLike={toggleLike}
+          savedIds={savedIds}
+          toggleSave={toggleSave}
+          comments={comments}
+          addComment={addComment}
           onOpenComments={openComments}
-          onSelectProfession={(p) => { setActiveTab(p); setScreen("feed"); }}
+          onOpenProfile={openProfile}
         />
       )}
 
-      {screen === "vault" && (
-        <VaultScreen vault={vault} subscribed={profile.subscribed} setVault={setVault} onUpgrade={() => setScreen("settings")} />
-      )}
-
-      {screen === "bank" && (
-        <BankScreen
-          bank={bank}
-          profile={profile}
-          onTopUp={topUp}
-          onSubscribeToggle={toggleSubscription}
-          onSimulatePick={simulateIncomingPick}
-          pickRequests={pickRequests}
-          onAcceptRequest={acceptPickRequest}
-          onDeclineRequest={declinePickRequest}
+      {screen === "user-profile" && activeCreator && (
+        <UserProfileScreen
+          creator={activeCreator}
+          isSelf={viewingSelf}
+          following={!viewingSelf && followedIds.includes(activeCreator.id)}
+          onToggleFollow={() => toggleFollow(activeCreator.id)}
+          onPick={startPick}
+          onEditProfile={() => goto("settings")}
+          posts={FEED_POSTS}
+          likedIds={likedIds}
+          toggleLike={toggleLike}
+          savedIds={savedIds}
+          toggleSave={toggleSave}
+          comments={comments}
+          onOpenComments={openComments}
+          addComment={addComment}
         />
       )}
 
-      {screen === "profile" && (
-        <MyProfileScreen
-          profile={profile}
-          bank={bank}
-          pickedCount={pickedIds.length}
-          onSettings={() => setScreen("settings")}
-          onOpenPicked={() => setScreen("pickedBoard")}
-        />
-      )}
+      {screen === "picked" && <PickedScreen activeCall={activeCall} onEndCall={endCall} onOpenVault={() => goto("vault")} />}
 
-      {screen === "pickedBoard" && (
-        <PickedBoardScreen
-          creators={MOCK_CREATORS.filter((c) => pickedIds.includes(c.id))}
-          onBack={() => setScreen("profile")}
-          onOpenProfile={setViewingCreator}
-        />
-      )}
-
-      {screen === "chats" && (
-        <ChatsScreen creators={MOCK_CREATORS.filter((c) => follows.includes(c.id)).slice(0, 5)} onOpenChat={setActiveChat} onBack={() => setScreen("feed")} />
-      )}
+      {screen === "vault" && <VaultScreen files={vaultFiles} onUpload={uploadFile} />}
 
       {screen === "settings" && (
         <SettingsScreen
           profile={profile}
-          onSubscribeToggle={toggleSubscription}
+          bank={bank}
+          onToggleSubscribe={toggleSubscribe}
           onToggleAutoAccept={toggleAutoAccept}
-          onSimulatePick={simulateIncomingPick}
-          onBack={() => setScreen("profile")}
-          onLogout={() => { setProfile(null); safeSet("profile", null); }}
+          onWithdraw={withdraw}
+          onAddFunds={addFunds}
+          onLogout={() => { setProfile(null); safeSet("profile", null); goto("signup"); }}
         />
       )}
 
-      {screen !== "settings" && screen !== "pickedBoard" && screen !== "chats" && (
-        <BottomNav screen={screen} setScreen={setScreen} subscribed={profile.subscribed} />
+      {commentsFor && (
+        <CommentsSheet
+          post={commentsFor}
+          comments={comments[commentsFor.id] || []}
+          onClose={() => setCommentsFor(null)}
+          onSend={(text) => addComment(commentsFor.id, text)}
+        />
       )}
-    </div>
-  );
-}
 
-function ProfileOverlay({ creator, onClose, onPick, following, onToggleFollow }) {
-  const c = avatarColor(creator.name);
-  return (
-    <div className="absolute inset-0 z-30 flex flex-col" style={{ background: THEME.bg }}>
-      <div className="flex items-center px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
-        <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: THEME.surface }}>
-          <X size={16} color={THEME.textSecondary} />
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto px-5 py-4 relative">
-        <CircuitBackground style={{ top: 30, opacity: 0.85 }} />
-        <div className="relative z-10 flex items-start justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full flex items-center justify-center" style={{ width: 52, height: 52, background: c + "26", border: "1px solid " + c + "55" }}>
-              <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 17, color: c }}>{initials(creator.name)}</span>
-            </div>
-            <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 21, color: THEME.textPrimary }}>{creator.name}</div>
-          </div>
-          <div className="flex flex-col items-end gap-1.5">
-            <div className="flex items-center gap-1">
-              <Sparkles size={12} color={THEME.gold} />
-              <span style={{ color: THEME.textSecondary, fontSize: 11.5 }}>{creator.picked} picked</span>
-            </div>
-            <button onClick={onToggleFollow} className="rounded-full px-3.5 py-1.5" style={{ background: following ? THEME.surface : THEME.blue, border: "1px solid " + (following ? THEME.border : THEME.blue), color: following ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12.5 }}>
-              {following ? "Following" : "Follow"}
-            </button>
-          </div>
-        </div>
-
-        <div className="relative z-10">
-          <ProfessionTabRow professions={creator.professions} active={null} />
-        </div>
-
-        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
-        <div className="relative z-10" style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>{creator.bio}</div>
-
-        <button onClick={() => onPick(creator)} className="relative z-10 w-full rounded-full py-2.5 flex items-center justify-center gap-1.5 mb-6" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 13.5 }}>
-          Pick <span style={{ fontFamily: MONO }}>{money(creator.pickFee)}</span>
-        </button>
-
-        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>POSTS</div>
-        <div className="relative z-10 grid grid-cols-2 gap-2.5">
-          {creator.posts.map((p) => (
-            <div key={p.id} className="rounded-xl p-3 flex flex-col justify-end" style={{ height: 100, background: "linear-gradient(135deg," + c + "22," + c + "05)", border: "1px solid " + c + "30" }}>
-              <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{p.caption.slice(0, 60)}...</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PickSheet({ creator, onCancel, onConfirm }) {
-  const [wantsPassword, setWantsPassword] = useState(false);
-  const [password, setPassword] = useState("");
-  return (
-    <div className="absolute inset-0 z-40 flex items-end" style={{ background: "#00000088" }}>
-      <div className="w-full rounded-t-3xl px-5 pt-5 pb-6" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
-        <div className="flex items-center justify-between mb-4">
-          <span style={{ color: THEME.textPrimary, fontWeight: 800, fontSize: 16 }}>Confirm Pick</span>
-          <button onClick={onCancel}><X size={18} color={THEME.textMuted} /></button>
-        </div>
-        <div className="flex items-center gap-3 mb-4">
-          <Avatar name={creator.name} size={44} />
-          <div>
-            <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 14.5 }}>{creator.name}</div>
-            <div style={{ color: THEME.textMuted, fontSize: 12 }}>{creator.professions.join(", ")}</div>
-          </div>
-        </div>
-        <div className="flex items-center justify-between px-4 py-3 rounded-xl mb-2" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-          <span style={{ color: THEME.textSecondary, fontSize: 13 }}>Pick fee</span>
-          <span style={{ fontFamily: MONO, color: THEME.gold, fontWeight: 700, fontSize: 15 }}>{money(creator.pickFee)}</span>
-        </div>
-
-        <button onClick={() => setWantsPassword((w) => !w)} className="flex items-center gap-2 px-1 py-2.5 w-full" >
-          <div className="flex items-center justify-center rounded" style={{ width: 18, height: 18, background: wantsPassword ? THEME.gold : THEME.surface, border: "1px solid " + (wantsPassword ? THEME.gold : THEME.border) }}>
-            {wantsPassword && <Check size={12} color="#fff" />}
-          </div>
-          <KeyRound size={14} color={THEME.textSecondary} />
-          <span style={{ color: THEME.textSecondary, fontSize: 12.5 }}>Password protect this room</span>
-        </button>
-        {wantsPassword && (
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Set a room password"
-            className="w-full rounded-lg px-3 py-2 mb-2"
-            style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 13, outline: "none" }}
-          />
-        )}
-
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, marginBottom: 18, marginTop: 6 }}>
-          Opens a video call by default. You can minimize into your workspace once connected.
-        </div>
-        <button onClick={() => onConfirm(wantsPassword ? password : null)} className="w-full rounded-full py-3" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 14.5 }}>
-          Confirm and connect
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function CallCommentInput({ onSend }) {
-  const [text, setText] = useState("");
-  function submit() {
-    if (!text.trim()) return;
-    onSend(text.trim());
-    setText("");
-  }
-  return (
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <input
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
-        placeholder="Write a comment..."
-        className="flex-1 rounded-full px-3.5 py-2"
-        style={{ background: "#1A2740", border: "1px solid #2A3B57", color: "#fff", fontSize: 12.5, outline: "none" }}
-      />
-      <button onClick={submit} className="p-2 rounded-full flex-shrink-0" style={{ background: THEME.gold }}>
-        <Send size={14} color="#fff" />
-      </button>
-    </div>
-  );
-}
-
-function CommentsOverlay({ post, creator, comments, onClose, onSubmit }) {
-  const [text, setText] = useState("");
-  return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ background: THEME.bg }}>
-      <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
-        <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: THEME.surface }}>
-          <X size={16} color={THEME.textSecondary} />
-        </button>
-        <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 14.5 }}>Comments</span>
-        <div style={{ width: 30 }} />
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-4">
-        {comments.length === 0 && (
-          <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>No comments yet. Be the first.</div>
-        )}
-        {comments.map((c) => (
-          <div key={c.id} className="flex items-start gap-2.5">
-            <Avatar name={c.author} size={30} />
-            <div>
-              <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 12.5, marginRight: 6 }}>{c.author}</span>
-              <span style={{ color: THEME.textSecondary, fontSize: 12.5 }}>{c.text}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-2.5 px-3.5 py-3 flex-shrink-0" style={{ borderTop: "1px solid " + THEME.borderSoft }}>
-        <Avatar name={creator.name} size={28} />
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && text.trim()) {
-              onSubmit(text);
-              setText("");
-            }
+      {profile && (screen === "feed" || screen === "user-profile" || screen === "vault" || screen === "settings") && (
+        <BottomNav
+          screen={screen}
+          goto={(s) => {
+            if (s === "user-profile") setViewingPost(null);
+            goto(s);
           }}
-          placeholder="Write a comment..."
-          className="flex-1 rounded-full px-3.5 py-2"
-          style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 13, outline: "none" }}
         />
-        <button
-          onClick={() => { if (text.trim()) { onSubmit(text); setText(""); } }}
-          className="p-2 rounded-full flex-shrink-0"
-          style={{ background: THEME.gold }}
-        >
-          <Send size={15} color="#fff" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function ChatsScreen({ creators, onOpenChat, onBack }) {
-  return (
-    <>
-      <TopBar title="Chats" right={
-        <button onClick={onBack} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-          <ArrowLeft size={15} color={THEME.textSecondary} />
-        </button>
-      } />
-      <div className="flex-1 overflow-y-auto px-4 py-3">
-        {creators.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
-            <MessageSquare size={24} color={THEME.textMuted} />
-            <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Follow creators to start chatting with them.</div>
-          </div>
-        )}
-        <div className="flex flex-col gap-1">
-          {creators.map((c) => (
-            <button key={c.id} onClick={() => onOpenChat(c)} className="flex items-center gap-3 px-2 py-2.5 rounded-xl">
-              <Avatar name={c.name} size={42} />
-              <div className="flex-1 min-w-0 text-left">
-                <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>{c.name}</div>
-                <div style={{ color: THEME.textMuted, fontSize: 12, marginTop: 1 }}>Say hi to start the conversation</div>
-              </div>
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ChatThread({ creator, onClose }) {
-  const [messages, setMessages] = useState([]);
-  const [text, setText] = useState("");
-
-  function send() {
-    if (!text.trim()) return;
-    setMessages((m) => [...m, { id: Math.random().toString(36).slice(2), from: "me", text: text.trim() }]);
-    setText("");
-  }
-
-  return (
-    <div className="absolute inset-0 z-40 flex flex-col" style={{ background: THEME.bg }}>
-      <div className="flex items-center gap-2.5 px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
-        <button onClick={onClose} className="p-1.5 rounded-full" style={{ background: THEME.surface }}>
-          <ArrowLeft size={16} color={THEME.textSecondary} />
-        </button>
-        <Avatar name={creator.name} size={30} />
-        <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 14 }}>{creator.name}</span>
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-2">
-        {messages.length === 0 && (
-          <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>Say hi to {creator.name}.</div>
-        )}
-        {messages.map((m) => (
-          <div key={m.id} className="self-end rounded-2xl px-3.5 py-2" style={{ background: THEME.gold, color: "#fff", maxWidth: "75%" }}>
-            <span style={{ fontSize: 13 }}>{m.text}</span>
-          </div>
-        ))}
-      </div>
-      <div className="flex items-center gap-2.5 px-3.5 py-3 flex-shrink-0" style={{ borderTop: "1px solid " + THEME.borderSoft }}>
-        <input
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          placeholder="Message..."
-          className="flex-1 rounded-full px-3.5 py-2"
-          style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 13, outline: "none" }}
-        />
-        <button onClick={send} className="p-2 rounded-full flex-shrink-0" style={{ background: THEME.gold }}>
-          <Send size={15} color="#fff" />
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function PickedBoardScreen({ creators, onBack, onOpenProfile }) {
-  return (
-    <>
-      <TopBar title="Picked" right={
-        <button onClick={onBack} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-          <ArrowLeft size={15} color={THEME.textSecondary} />
-        </button>
-      } />
-      <div className="flex-1 overflow-y-auto px-4 py-3">
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>
-          1 BOARD, {creators.length} CARDS
-        </div>
-        {creators.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
-            <Sparkles size={24} color={THEME.textMuted} />
-            <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Creators you Pick will be saved here.</div>
-          </div>
-        )}
-        <div className="grid grid-cols-2 gap-2.5">
-          {creators.map((c) => {
-            const col = avatarColor(c.name);
-            return (
-              <button
-                key={c.id}
-                onClick={() => onOpenProfile(c)}
-                className="rounded-xl p-3 flex flex-col items-center gap-2"
-                style={{ background: "linear-gradient(135deg," + col + "22," + col + "05)", border: "1px solid " + col + "30" }}
-              >
-                <Avatar name={c.name} size={44} />
-                <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 12.5 }}>{c.name}</span>
-                <span style={{ color: THEME.textMuted, fontSize: 10.5 }}>{c.professions[0]}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function SearchScreen({ savedPosts, onOpenProfile, onOpenComments, onSelectProfession }) {
-  const [tab, setTab] = useState("explore");
-  const [query, setQuery] = useState("");
-  const q = query.trim().toLowerCase().replace(/^#/, "");
-
-  const matchedCreators = q
-    ? MOCK_CREATORS.filter((c) => c.name.toLowerCase().includes(q) || c.professions.some((p) => p.toLowerCase().includes(q)))
-    : [];
-  const matchedPosts = q
-    ? MOCK_CREATORS.flatMap((c) => c.posts.map((p) => ({ post: p, creator: c }))).filter(
-        ({ post, creator }) => post.caption.toLowerCase().includes(q) || tagOf(creator).toLowerCase().includes("#" + q)
-      )
-    : [];
-
-  const savedItems = MOCK_CREATORS.flatMap((c) => c.posts.map((p) => ({ post: p, creator: c }))).filter(({ post }) =>
-    savedPosts.includes(post.id)
-  );
-
-  return (
-    <>
-      <TopBar title="Search" />
-      <div className="flex gap-2 px-4 pt-3 pb-1 flex-shrink-0">
-        <Chip active={tab === "explore"} onClick={() => setTab("explore")} small>Explore</Chip>
-        <Chip active={tab === "saved"} onClick={() => setTab("saved")} small>Saved ({savedPosts.length})</Chip>
-      </div>
-
-      {tab === "explore" && (
-        <>
-          <div className="px-4 pt-2 pb-2 flex-shrink-0">
-            <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border }}>
-              <img src={ICONS + "search.png"} alt="" style={{ width: 18, height: 18 }} />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search users, careers, or #description"
-                className="flex-1 bg-transparent outline-none"
-                style={{ color: THEME.textPrimary, fontSize: 13.5 }}
-              />
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-2">
-            {q ? (
-              <>
-                {matchedCreators.length > 0 && (
-                  <>
-                    <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "6px 0 10px" }}>USERS &amp; CAREERS</div>
-                    <div className="flex flex-col gap-2 mb-4">
-                      {matchedCreators.map((c) => (
-                        <button key={c.id} onClick={() => onOpenProfile(c)} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-                          <Avatar name={c.name} size={34} />
-                          <div className="text-left">
-                            <div style={{ color: THEME.textPrimary, fontSize: 13.5, fontWeight: 700 }}>{c.name}</div>
-                            <div style={{ color: THEME.textMuted, fontSize: 11.5 }}>{c.professions.join(", ")}</div>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </>
-                )}
-                {matchedPosts.length > 0 && (
-                  <>
-                    <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "6px 0 10px" }}>POSTS</div>
-                    <div className="grid grid-cols-2 gap-2.5 mb-4">
-                      {matchedPosts.map(({ post, creator }) => {
-                        const col = avatarColor(creator.name);
-                        return (
-                          <button key={post.id} onClick={() => onOpenComments(post, creator)} className="rounded-xl p-3 flex flex-col justify-end text-left" style={{ height: 100, background: "linear-gradient(135deg," + col + "22," + col + "05)", border: "1px solid " + col + "30" }}>
-                            <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{post.caption.slice(0, 50)}...</span>
-                            <span style={{ color: col, fontSize: 10, fontWeight: 700, marginTop: 4 }}>{tagOf(creator)}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </>
-                )}
-                {matchedCreators.length === 0 && matchedPosts.length === 0 && (
-                  <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>No matches for "{query}".</div>
-                )}
-              </>
-            ) : (
-              <>
-                <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>ALL PROFESSIONS</div>
-                <div className="flex flex-col gap-2">
-                  {PROFESSIONS.map((p) => {
-                    const count = MOCK_CREATORS.filter((c) => c.professions.includes(p)).length;
-                    return (
-                      <button key={p} onClick={() => onSelectProfession(p)} className="flex items-center justify-between px-3.5 py-3 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-                        <span style={{ color: THEME.textPrimary, fontSize: 14, fontWeight: 600 }}>{p}</span>
-                        <div className="flex items-center gap-1.5">
-                          <span style={{ color: THEME.textMuted, fontSize: 12 }}>{count}</span>
-                          <ChevronRight size={15} color={THEME.textMuted} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </>
-            )}
-          </div>
-        </>
       )}
-
-      {tab === "saved" && (
-        <div className="flex-1 overflow-y-auto px-4 py-3">
-          <div style={{ color: THEME.textMuted, fontSize: 11.5, lineHeight: 1.5, marginBottom: 14 }}>
-            Saved for later reference. Saved items can't be downloaded, but links can still be shared.
-          </div>
-          {savedItems.length === 0 ? (
-            <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
-              <Bookmark size={24} color={THEME.textMuted} />
-              <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Bookmark a post to find it here later.</div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2.5">
-              {savedItems.map(({ post, creator }) => {
-                const col = avatarColor(creator.name);
-                return (
-                  <button key={post.id} onClick={() => onOpenComments(post, creator)} className="rounded-xl p-3 flex flex-col justify-end text-left" style={{ height: 100, background: "linear-gradient(135deg," + col + "22," + col + "05)", border: "1px solid " + col + "30" }}>
-                    <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{post.caption.slice(0, 50)}...</span>
-                    <span style={{ color: col, fontSize: 10, fontWeight: 700, marginTop: 4 }}>{tagOf(creator)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      )}
-    </>
-  );
-}
-
-function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
-  const [query, setQuery] = useState("");
-
-  if (!subscribed) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
-        <Lock size={26} color={THEME.textMuted} />
-        <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 15.5 }}>Vault is a Pick-Plus feature</div>
-        <div style={{ color: THEME.textMuted, fontSize: 12.5, lineHeight: 1.5 }}>
-          Subscribe to Pick-Plus to store files shared during your Pick sessions.
-        </div>
-        <button onClick={onUpgrade} className="rounded-full px-5 py-2.5 mt-2" style={{ background: THEME.gold, color: "#fff", fontWeight: 700, fontSize: 13 }}>
-          Go to Settings
-        </button>
-      </div>
-    );
-  }
-
-  function toggleApprove(sessionId, fileId) {
-    setVault((v) => ({
-      sessions: v.sessions.map((s) =>
-        s.withId === sessionId ? { ...s, files: s.files.map((f) => (f.id === fileId ? { ...f, approved: !f.approved } : f)) } : s
-      ),
-    }));
-  }
-
-  const q = query.trim().toLowerCase();
-  const sessions = q
-    ? vault.sessions.filter((s) => s.withName.toLowerCase().includes(q) || s.files.some((f) => f.name.toLowerCase().includes(q)))
-    : vault.sessions;
-
-  return (
-    <>
-      <TopBar title="Vault" />
-      <div className="px-4 pt-3 pb-1 flex-shrink-0">
-        <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
-          <img src={ICONS + "search.png"} alt="" style={{ width: 18, height: 18 }} />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search past conversations and files"
-            className="flex-1 bg-transparent outline-none"
-            style={{ color: THEME.textPrimary, fontSize: 13 }}
-          />
-        </div>
-      </div>
-      <div className="flex-1 overflow-y-auto px-4 py-3">
-        {vault.sessions.length === 0 && (
-          <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
-            <FolderLock size={24} color={THEME.textMuted} />
-            <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Files shared during a Pick session will show up here.</div>
-          </div>
-        )}
-        {vault.sessions.length > 0 && sessions.length === 0 && (
-          <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>No matches for "{query}".</div>
-        )}
-        {sessions.map((s) => (
-          <div key={s.withId} className="mb-4 rounded-xl overflow-hidden" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-            <div className="flex items-center gap-2.5 px-3.5 py-3" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
-              <Avatar name={s.withName} size={30} />
-              <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>{s.withName}</span>
-            </div>
-            {s.files.map((f) => (
-              <div key={f.id} className="flex items-center justify-between px-3.5 py-2.5" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
-                <div className="flex items-center gap-2.5">
-                  {f.type === "video" ? <Film size={16} color={THEME.blue} /> : f.type === "audio" ? <Music2 size={16} color={THEME.blue} /> : <FileText size={16} color={THEME.blue} />}
-                  <span style={{ color: THEME.textSecondary, fontSize: 12.5 }}>{f.name}</span>
-                </div>
-                <button
-                  onClick={() => toggleApprove(s.withId, f.id)}
-                  className="flex items-center gap-1 rounded-full px-2.5 py-1"
-                  style={{ background: f.approved ? THEME.green + "22" : THEME.surfaceRaised, border: "1px solid " + (f.approved ? THEME.green : THEME.border) }}
-                >
-                  {f.approved ? <Download size={12} color={THEME.green} /> : <Lock size={12} color={THEME.textMuted} />}
-                  <span style={{ fontSize: 10.5, color: f.approved ? THEME.green : THEME.textMuted, fontWeight: 600 }}>{f.approved ? "Approved" : "Locked"}</span>
-                </button>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function timeLeft(ms) {
-  if (ms <= 0) return "expired";
-  const h = Math.floor(ms / 3600000);
-  const m = Math.floor((ms % 3600000) / 60000);
-  return h + "h " + m + "m left";
-}
-
-function BankScreen({ bank, profile, onTopUp, onSubscribeToggle, onSimulatePick, pickRequests, onAcceptRequest, onDeclineRequest }) {
-  const pending = pickRequests.filter((r) => r.status === "pending");
-  return (
-    <>
-      <TopBar title="Bank" />
-      <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="rounded-2xl px-5 py-5 mb-4" style={{ background: "linear-gradient(135deg,#F1E4CE,#FFFFFF)", border: "1px solid " + THEME.border }}>
-          <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 600 }}>Available balance</div>
-          <div style={{ fontFamily: MONO, color: THEME.textPrimary, fontSize: 32, fontWeight: 700, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{money(bank.balance)}</div>
-          <div className="flex gap-2 mt-4">
-            <button onClick={() => onTopUp(50)} className="rounded-full px-4 py-1.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 12.5, fontWeight: 600 }}>+ $50</button>
-            <button onClick={() => onTopUp(100)} className="rounded-full px-4 py-1.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 12.5, fontWeight: 600 }}>+ $100</button>
-          </div>
-        </div>
-
-        <div className="rounded-xl px-4 py-3.5 mb-4 flex items-center justify-between" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-          <div>
-            <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
-              {profile.subscribed ? "Active — you earn $8 every time you're Picked" : "$50/month — earn $8 per Pick instead of $3"}
-            </div>
-          </div>
-          <button
-            onClick={onSubscribeToggle}
-            className="rounded-full px-4 py-2"
-            style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12 }}
-          >
-            {profile.subscribed ? "Cancel" : "Subscribe"}
-          </button>
-        </div>
-
-        {pending.length > 0 && (
-          <>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>PICK REQUESTS</div>
-            <div className="flex flex-col gap-2 mb-5">
-              {pending.map((r) => (
-                <div key={r.id} className="rounded-xl px-4 py-3" style={{ background: THEME.pink + "12", border: "1px solid " + THEME.pink + "40" }}>
-                  <div className="flex items-center justify-between mb-2">
-                    <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13 }}>You were Picked</span>
-                    <span style={{ fontFamily: MONO, color: THEME.gold, fontWeight: 700, fontSize: 13 }}>+{money(r.share)}</span>
-                  </div>
-                  <div style={{ color: THEME.textMuted, fontSize: 11, marginBottom: 10 }}>{timeLeft(r.respondBy - Date.now())} to respond, or it reverses to the Picker's Vault</div>
-                  <div className="flex gap-2">
-                    <button onClick={() => onDeclineRequest(r.id)} className="flex-1 rounded-full py-1.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textSecondary, fontSize: 12, fontWeight: 700 }}>Decline</button>
-                    <button onClick={() => onAcceptRequest(r.id)} className="flex-1 rounded-full py-1.5" style={{ background: THEME.gold, color: "#fff", fontSize: 12, fontWeight: 700 }}>Accept</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-
-        <button onClick={onSimulatePick} className="w-full flex items-center justify-center gap-2 rounded-xl py-3 mb-5" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
-          <Bell size={14} color={THEME.textMuted} />
-          <span style={{ color: THEME.textMuted, fontSize: 12, fontWeight: 600 }}>Demo: simulate someone picking you</span>
-        </button>
-
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>ACTIVITY</div>
-        <div className="flex flex-col gap-2">
-          {bank.transactions.length === 0 && <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>No activity yet.</div>}
-          {bank.transactions.map((t) => (
-            <div key={t.id} className="flex items-center justify-between px-3.5 py-2.5 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-              <div className="flex items-center gap-2.5">
-                <div className="rounded-full p-1.5" style={{ background: (t.type === "credit" ? THEME.green : THEME.red) + "1F" }}>
-                  {t.type === "credit" ? <ArrowDownLeft size={13} color={THEME.green} /> : <ArrowUpRight size={13} color={THEME.red} />}
-                </div>
-                <div>
-                  <div style={{ color: THEME.textPrimary, fontSize: 12.5, fontWeight: 600 }}>{t.note}</div>
-                  <div style={{ color: THEME.textMuted, fontSize: 10.5 }}>{timeAgo(t.ts)}</div>
-                </div>
-              </div>
-              <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: t.type === "credit" ? THEME.green : THEME.red }}>
-                {t.type === "credit" ? "+" : "-"}{money(t.amount)}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function MyProfileScreen({ profile, bank, pickedCount, onSettings, onOpenPicked }) {
-  const c = avatarColor(profile.name);
-  return (
-    <>
-      <TopBar title="Your page" right={
-        <button onClick={onSettings} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-          <Settings size={15} color={THEME.textSecondary} />
-        </button>
-      } />
-      <div className="flex-1 overflow-y-auto px-5 py-5 relative">
-        <CircuitBackground style={{ top: 30, opacity: 0.85 }} />
-        <div className="relative z-10 flex items-start justify-between mb-1">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full flex items-center justify-center" style={{ width: 52, height: 52, background: c + "26", border: "1px solid " + c + "55" }}>
-              <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 17, color: c }}>{initials(profile.name)}</span>
-            </div>
-            <div>
-              <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 21, color: THEME.textPrimary }}>{profile.name}</div>
-              {profile.subscribed && (
-                <div className="flex items-center gap-1 mt-1">
-                  <Sparkles size={12} color={THEME.gold} />
-                  <span style={{ color: THEME.gold, fontSize: 11, fontWeight: 700 }}>Pick-Plus</span>
-                </div>
-              )}
-            </div>
-          </div>
-          <button onClick={onOpenPicked} className="flex flex-col items-center gap-1 px-2 py-1 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-            <Sparkles size={16} color={THEME.gold} />
-            <span style={{ color: THEME.textPrimary, fontSize: 11, fontWeight: 700 }}>{pickedCount}</span>
-            <span style={{ color: THEME.textMuted, fontSize: 9 }}>Picked</span>
-          </button>
-        </div>
-
-        <div className="relative z-10">
-          <ProfessionTabRow professions={profile.professions} active={null} />
-        </div>
-
-        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
-        <div className="relative z-10" style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 20 }}>{profile.bio}</div>
-
-        <div className="relative z-10 grid grid-cols-2 gap-3 mb-5">
-          <div className="rounded-xl px-4 py-3" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-            <div style={{ color: THEME.textMuted, fontSize: 11 }}>Your Pick fee</div>
-            <div style={{ fontFamily: MONO, color: THEME.textPrimary, fontSize: 18, fontWeight: 700, marginTop: 2 }}>{money(profile.pickFee)}</div>
-          </div>
-          <div className="rounded-xl px-4 py-3" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-            <div style={{ color: THEME.textMuted, fontSize: 11 }}>Bank balance</div>
-            <div style={{ fontFamily: MONO, color: THEME.textPrimary, fontSize: 18, fontWeight: 700, marginTop: 2 }}>{money(bank.balance)}</div>
-          </div>
-        </div>
-
-        <div className="relative z-10" style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>YOUR POSTS</div>
-        <button className="relative z-10 w-full flex flex-col items-center justify-center gap-2 py-8 rounded-xl" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
-          <img src={ICONS + "plus.png"} alt="Add" style={{ width: 26, height: 26 }} />
-          <span style={{ color: THEME.textMuted, fontSize: 12 }}>Share your first post</span>
-        </button>
-      </div>
-    </>
-  );
-}
-
-function SettingsScreen({ profile, onSubscribeToggle, onToggleAutoAccept, onSimulatePick, onBack, onLogout }) {
-  return (
-    <>
-      <TopBar title="Settings" right={
-        <button onClick={onBack} className="p-2 rounded-full" style={{ background: THEME.surfaceRaised }}>
-          <X size={15} color={THEME.textSecondary} />
-        </button>
-      } />
-      <div className="flex-1 overflow-y-auto px-5 py-4">
-        <div style={{ color: THEME.textSecondary, fontSize: 12.5, lineHeight: 1.5, marginBottom: 18 }}>
-          All settings can be accessed here. Our subscription tier gives access to advanced features and a Bank where you can store your money to carry out secure transactions with Picked Users.
-        </div>
-
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>SUBSCRIPTION</div>
-        <div className="rounded-xl px-4 py-3.5 mb-6 flex items-center justify-between" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-          <div>
-            <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
-              {profile.subscribed ? "Active — you earn $8 every time you're Picked" : "$50/month — earn $8 per Pick instead of $3"}
-            </div>
-          </div>
-          <button onClick={onSubscribeToggle} className="rounded-full px-4 py-2" style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12 }}>
-            {profile.subscribed ? "Cancel" : "Subscribe"}
-          </button>
-        </div>
-
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>PICK REQUESTS</div>
-        <div className="rounded-xl px-4 py-3.5 mb-6 flex items-center justify-between" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-          <div>
-            <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Auto-accept Picks</div>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>Auto-connect after a countdown, instead of manually accepting each request</div>
-          </div>
-          <button onClick={onToggleAutoAccept} className="flex items-center rounded-full flex-shrink-0" style={{ width: 42, height: 24, padding: 3, background: profile.autoAccept ? THEME.gold : THEME.border }}>
-            <div className="rounded-full" style={{ width: 18, height: 18, background: "#fff", marginLeft: profile.autoAccept ? 18 : 0, transition: "margin 0.15s" }} />
-          </button>
-        </div>
-
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>DEMO TOOLS</div>
-        <button onClick={onSimulatePick} className="w-full flex items-center justify-center gap-2 rounded-xl py-3 mb-6" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
-          <Bell size={14} color={THEME.textMuted} />
-          <span style={{ color: THEME.textMuted, fontSize: 12, fontWeight: 600 }}>Simulate an incoming Pick</span>
-        </button>
-
-        <button onClick={onLogout} className="w-full flex items-center justify-center gap-2 rounded-xl py-3" style={{ background: THEME.red + "15", border: "1px solid " + THEME.red + "44" }}>
-          <LogOut size={14} color={THEME.red} />
-          <span style={{ color: THEME.red, fontSize: 13, fontWeight: 700 }}>Log out and reset</span>
-        </button>
-      </div>
-    </>
+    </div>
   );
 }

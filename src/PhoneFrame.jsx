@@ -1,5 +1,5 @@
 const SCREEN_W = 390;
-const SCREEN_H = 620;
+const SCREEN_H = 844;
 
 export default function PhoneFrame({ children }) {
   return (
