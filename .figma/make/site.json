@@ -1,0 +1,10 @@
+{
+  "description": "Connect with professionals by career type to book paid 1:1 video sessions, share files securely, and manage in-app balances for seamless networking.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

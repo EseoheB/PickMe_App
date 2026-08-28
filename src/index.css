@@ -1,0 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+html, body, #root {
+  height: 100%;
+  background: #1a1a2e;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::-webkit-scrollbar { width: 0; height: 0; }
+
+@theme inline {
+  --font-display: 'Dancing Script', cursive;
+  --font-body: 'Outfit', sans-serif;
+  --color-pick-pink: #E91E8C;
+  --color-pick-gold: #C8A455;
+  --color-pick-purple: #2D1B69;
+  --color-pick-navy: #1a1a2e;
+  --color-pick-bg: #F0EDE8;
+  --color-pick-card: #E8E4DE;
+}
