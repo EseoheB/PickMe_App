@@ -6,22 +6,25 @@ import {
   ArrowUpRight, ArrowDownLeft, Sparkles, Bell,
   Cpu, PersonStanding, Users, Clapperboard, Camera, Disc3, Laugh, PenTool,
   Heart, MessageCircle, Send, MessageSquare, ArrowLeft,
+  Share2, Link2, Bookmark, KeyRound, Check,
+  Aperture, Lightbulb, Drama,
 } from "lucide-react";
 
 const THEME = {
-  bg: "#0B1220",
-  surface: "#121B2E",
-  surfaceRaised: "#1A2740",
-  border: "#28374F",
-  borderSoft: "#1E2C44",
-  textPrimary: "#F3F1E9",
-  textSecondary: "#93A0B4",
-  textMuted: "#5E6C82",
-  gold: "#D9A54E",
+  bg: "#DCDBE2",
+  surface: "#FFFFFF",
+  surfaceRaised: "#F1F0F5",
+  border: "#CFCED6",
+  borderSoft: "#E2E1E7",
+  textPrimary: "#17151D",
+  textSecondary: "#5B5966",
+  textMuted: "#8B8994",
+  gold: "#C08A3E",
   goldDark: "#8A6A2E",
+  pink: "#D9527A",
   blue: "#4C86C6",
-  green: "#5FA777",
-  red: "#D9645A",
+  green: "#4E9A6C",
+  red: "#DD3B3B",
 };
 
 const MONO = "'SFMono-Regular','Consolas','Liberation Mono',monospace";
@@ -30,6 +33,7 @@ const SANS = "-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-s
 const PROFESSIONS = [
   "Software Engineer", "Musician", "Dancer", "Choreographer", "Content Creator",
   "Actor", "Photographer", "Music Producer", "Comedian", "Illustrator",
+  "Cinematographer", "Director of Photography", "Gaffer", "Camera Man", "Movie Director",
 ];
 
 const PROFESSION_ICONS = {
@@ -38,14 +42,21 @@ const PROFESSION_ICONS = {
   "Dancer": PersonStanding,
   "Choreographer": Users,
   "Content Creator": Video,
-  "Actor": Clapperboard,
+  "Actor": Drama,
   "Photographer": Camera,
   "Music Producer": Disc3,
   "Comedian": Laugh,
   "Illustrator": PenTool,
+  "Cinematographer": Film,
+  "Director of Photography": Aperture,
+  "Gaffer": Lightbulb,
+  "Camera Man": Video,
+  "Movie Director": Clapperboard,
 };
 
-const AVATAR_COLORS = ["#D9A54E", "#4C86C6", "#5FA777", "#B06AA8", "#D9645A", "#4CA0A0"];
+const PROFESSION_TILE_COLORS = ["#D9527A", "#C08A3E"];
+
+const AVATAR_COLORS = ["#C08A3E", "#4C86C6", "#4E9A6C", "#9B5FA0", "#D9527A", "#3E9E9E"];
 
 function avatarColor(seed) {
   let h = 0;
@@ -120,6 +131,34 @@ async function safeSet(key, value) {
   } catch (e) {}
 }
 
+function CircuitBackground({ opacity = 0.35 }) {
+  return (
+    <svg
+      className="absolute pointer-events-none"
+      style={{ top: 0, left: 0, width: 160, height: 220, opacity, zIndex: 0 }}
+      viewBox="0 0 160 220"
+      fill="none"
+    >
+      {[
+        "M4 4 L4 40 L20 56 L20 90", "M20 4 L20 24 L40 44 L40 80 L60 100",
+        "M40 4 L40 20 L60 40 L60 70", "M60 4 L60 30 L80 50 L80 120",
+        "M80 4 L80 16 L100 36 L100 90", "M100 4 L100 26 L120 46 L120 100",
+        "M4 90 L20 90 L36 106 L36 140", "M36 4 L36 60 L56 80",
+      ].map((d, i) => (
+        <path key={i} d={d} stroke="#4C86C6" strokeWidth="1.2" opacity={0.5 - i * 0.04} />
+      ))}
+      {[[20, 90], [40, 80], [60, 100], [80, 120], [100, 90], [36, 140], [60, 70], [120, 100]].map(
+        ([cx, cy], i) => (
+          <circle key={i} cx={cx} cy={cy} r={i % 3 === 0 ? 3.5 : 2} fill={i % 3 === 0 ? "#1E3A5F" : "#4C86C6"} />
+        )
+      )}
+      {[[40, 44], [80, 50], [100, 36], [36, 106]].map(([x, y], i) => (
+        <rect key={i} x={x - 3} y={y - 3} width={6} height={6} fill="#2C5A8A" />
+      ))}
+    </svg>
+  );
+}
+
 function Chip({ active, children, onClick, small }) {
   return (
     <button
@@ -127,7 +166,7 @@ function Chip({ active, children, onClick, small }) {
       className={"rounded-full whitespace-nowrap " + (small ? "px-3 py-1 text-xs" : "px-4 py-1.5 text-sm")}
       style={{
         background: active ? THEME.gold : "transparent",
-        color: active ? "#241A08" : THEME.textSecondary,
+        color: active ? "#fff" : THEME.textSecondary,
         border: "1px solid " + (active ? THEME.gold : THEME.border),
         fontFamily: SANS,
         fontWeight: 500,
@@ -150,32 +189,39 @@ function Avatar({ name, size = 44 }) {
   );
 }
 
-function ProfessionTabRow({ professions, active, onSelect, showAll }) {
-  const list = showAll ? professions : professions;
+function ProfessionTabRow({ professions, active, onSelect, showAll, counts }) {
   return (
-    <div className="flex gap-4 px-4 py-3 overflow-x-auto flex-shrink-0">
+    <div className="flex gap-3.5 px-4 py-3 overflow-x-auto flex-shrink-0">
       {showAll && (
-        <button onClick={() => onSelect("All")} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 52 }}>
+        <button onClick={() => onSelect("All")} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 60 }}>
           <div
-            className="flex items-center justify-center rounded-full"
-            style={{ width: 44, height: 44, background: active === "All" ? THEME.gold : THEME.surface, border: "1px solid " + (active === "All" ? THEME.gold : THEME.border) }}
+            className="flex items-center justify-center"
+            style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: active === "All" ? THEME.textPrimary : THEME.surface,
+              boxShadow: "0 1px 3px rgba(23,21,29,0.12)",
+            }}
           >
-            <Sparkles size={19} color={active === "All" ? "#241A08" : THEME.textSecondary} />
+            <Sparkles size={20} color={active === "All" ? "#fff" : THEME.textSecondary} />
           </div>
-          <span style={{ fontFamily: SANS, fontSize: 10, color: active === "All" ? THEME.gold : THEME.textMuted, fontWeight: active === "All" ? 700 : 500 }}>All</span>
+          <span style={{ fontFamily: SANS, fontSize: 10.5, color: active === "All" ? THEME.textPrimary : THEME.textMuted, fontWeight: active === "All" ? 700 : 500 }}>All</span>
         </button>
       )}
-      {list.map((p) => {
+      {professions.map((p, i) => {
         const Icon = PROFESSION_ICONS[p] || Sparkles;
-        const color = avatarColor(p);
+        const color = PROFESSION_TILE_COLORS[i % 2];
         const isActive = active === p;
         return (
-          <button key={p} onClick={() => onSelect && onSelect(p)} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 52 }}>
+          <button key={p} onClick={() => onSelect && onSelect(p)} className="flex flex-col items-center gap-1 flex-shrink-0" style={{ width: 60 }}>
             <div
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 44, height: 44, background: isActive ? color + "33" : color + "1A", border: "1px solid " + (isActive ? color : color + "40") }}
+              className="flex items-center justify-center"
+              style={{
+                width: 48, height: 48, borderRadius: 14,
+                background: color,
+                boxShadow: isActive ? "0 0 0 2px " + THEME.textPrimary + ", 0 2px 6px rgba(23,21,29,0.18)" : "0 1px 3px rgba(23,21,29,0.15)",
+              }}
             >
-              <Icon size={19} color={color} />
+              <Icon size={21} color="#fff" strokeWidth={2} />
             </div>
             <span
               className="truncate w-full text-center"
@@ -183,6 +229,9 @@ function ProfessionTabRow({ professions, active, onSelect, showAll }) {
             >
               {p}
             </span>
+            {counts && (
+              <span style={{ fontFamily: SANS, fontSize: 9, color: THEME.textMuted }}>{counts[p] || 0} posts</span>
+            )}
           </button>
         );
       })}
@@ -194,7 +243,7 @@ function Toast({ toasts }) {
   return (
     <div className="fixed left-0 right-0 flex flex-col items-center gap-2 z-50 px-4" style={{ top: 14 }}>
       {toasts.map((t) => (
-        <div key={t.id} className="px-4 py-2 rounded-lg text-sm shadow-lg" style={{ background: THEME.surfaceRaised, color: THEME.textPrimary, border: "1px solid " + THEME.border, fontFamily: SANS, maxWidth: 340 }}>
+        <div key={t.id} className="px-4 py-2 rounded-lg text-sm" style={{ background: THEME.textPrimary, color: "#fff", fontFamily: SANS, maxWidth: 340, boxShadow: "0 6px 20px rgba(23,21,29,0.35)" }}>
           {t.text}
         </div>
       ))}
@@ -204,8 +253,8 @@ function Toast({ toasts }) {
 
 function TopBar({ title, balance, onBank, right }) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft, background: THEME.bg }}>
-      <div style={{ fontFamily: SANS, fontWeight: 800, fontSize: 20, color: THEME.textPrimary, letterSpacing: "-0.02em" }}>
+    <div className="flex items-center justify-between px-4 py-3 flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft, background: THEME.surface }}>
+      <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 20, color: THEME.textPrimary }}>
         {title || "PickMe"}
       </div>
       <div className="flex items-center gap-2">
@@ -230,14 +279,14 @@ function BottomNav({ screen, setScreen, subscribed }) {
     { id: "profile", icon: User, label: "You" },
   ];
   return (
-    <div className="flex items-center justify-around flex-shrink-0" style={{ borderTop: "1px solid " + THEME.borderSoft, background: THEME.bg, paddingTop: 8, paddingBottom: 8 }}>
+    <div className="flex items-center justify-around flex-shrink-0" style={{ borderTop: "1px solid " + THEME.borderSoft, background: THEME.surface, paddingTop: 8, paddingBottom: 8 }}>
       {items.map((it) => {
         const active = screen === it.id;
         const Icon = it.icon;
         return (
           <button key={it.id} onClick={() => setScreen(it.id)} className="flex flex-col items-center gap-1 px-2">
-            <Icon size={21} color={active ? THEME.gold : THEME.textMuted} strokeWidth={active ? 2.3 : 1.8} />
-            <span style={{ fontFamily: SANS, fontSize: 10, color: active ? THEME.gold : THEME.textMuted, fontWeight: active ? 700 : 500 }}>{it.label}</span>
+            <Icon size={21} color={active ? THEME.pink : THEME.textMuted} strokeWidth={active ? 2.3 : 1.8} />
+            <span style={{ fontFamily: SANS, fontSize: 10, color: active ? THEME.pink : THEME.textMuted, fontWeight: active ? 700 : 500 }}>{it.label}</span>
           </button>
         );
       })}
@@ -245,11 +294,15 @@ function BottomNav({ screen, setScreen, subscribed }) {
   );
 }
 
-function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, onOpenComments, commentCount }) {
+function tagOf(creator) {
+  return "#" + creator.professions[0].replace(/ /g, "");
+}
+
+function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, onOpenComments, commentCount, saved, onToggleSave, onShare }) {
   const c = avatarColor(creator.name);
   const likeCount = post.likes + (liked ? 1 : 0);
   return (
-    <div className="flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
+    <div className="flex-shrink-0" style={{ borderBottom: "1px solid " + THEME.borderSoft, background: THEME.surface }}>
       <div className="flex items-center gap-2.5 px-3.5 pt-3.5 pb-3">
         <button onClick={() => onOpenProfile(creator)}><Avatar name={creator.name} size={36} /></button>
         <div className="flex-1 min-w-0 text-left" onClick={() => onOpenProfile(creator)}>
@@ -259,7 +312,7 @@ function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, o
         <button
           onClick={() => onPick(creator)}
           className="flex items-center gap-1 rounded-full px-3 py-1.5 flex-shrink-0"
-          style={{ background: THEME.gold, color: "#241A08" }}
+          style={{ background: THEME.gold, color: "#fff" }}
         >
           <span style={{ fontFamily: SANS, fontWeight: 800, fontSize: 12.5 }}>Pick</span>
           <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700 }}>{money(creator.pickFee)}</span>
@@ -269,17 +322,26 @@ function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, o
         className="w-full flex items-center justify-center"
         style={{ aspectRatio: "4 / 5", background: "linear-gradient(135deg," + c + "33," + c + "08)" }}
       >
-        <span style={{ fontFamily: SANS, fontSize: 12, color: c, fontWeight: 700, letterSpacing: "0.05em" }}>#{creator.professions[0].toUpperCase().replace(/ /g, "")}</span>
+        <span style={{ fontFamily: SANS, fontSize: 12, color: c, fontWeight: 700, letterSpacing: "0.05em" }}>{tagOf(creator)}</span>
       </div>
-      <div className="flex items-center gap-4 px-3.5 pt-2.5">
-        <button onClick={() => onToggleLike(post.id)} aria-label="Like">
-          <Heart size={22} color={liked ? THEME.red : THEME.textSecondary} fill={liked ? THEME.red : "none"} />
+      <div className="flex items-center gap-3 px-3.5 pt-2.5">
+        <button onClick={() => onToggleLike(post.id)} aria-label="Like" className="flex items-center justify-center rounded-full" style={{ width: 34, height: 34, background: liked ? THEME.red : THEME.surfaceRaised }}>
+          <Heart size={17} color={liked ? "#fff" : THEME.textSecondary} fill={liked ? "#fff" : "none"} />
         </button>
-        <button onClick={() => onOpenComments(post, creator)} aria-label="Comments">
-          <MessageCircle size={21} color={THEME.textSecondary} />
+        <button onClick={() => onOpenComments(post, creator)} aria-label="Comments" className="relative flex items-center justify-center rounded-full" style={{ width: 34, height: 34, background: THEME.gold }}>
+          <MessageCircle size={16} color="#fff" />
+          {commentCount > 0 && (
+            <span className="absolute flex items-center justify-center rounded-full" style={{ top: -4, right: -4, minWidth: 16, height: 16, padding: "0 3px", background: THEME.red, color: "#fff", fontSize: 9, fontWeight: 700 }}>
+              {commentCount}
+            </span>
+          )}
         </button>
-        <button aria-label="Share">
-          <Send size={20} color={THEME.textSecondary} />
+        <button onClick={() => onShare(post, creator)} aria-label="Share">
+          <Share2 size={18} color={THEME.textSecondary} />
+        </button>
+        <div className="flex-1" />
+        <button onClick={() => onToggleSave(post.id)} aria-label="Save">
+          <Bookmark size={18} color={saved ? THEME.gold : THEME.textSecondary} fill={saved ? THEME.gold : "none"} />
         </button>
       </div>
       <div className="px-3.5 pt-1.5" style={{ fontFamily: SANS, fontSize: 12.5, color: THEME.textPrimary, fontWeight: 700 }}>
@@ -287,7 +349,7 @@ function FeedPost({ post, creator, onOpenProfile, onPick, liked, onToggleLike, o
       </div>
       <div className="px-3.5 pt-1 pb-1.5" style={{ fontFamily: SANS, fontSize: 13, color: THEME.textSecondary, lineHeight: 1.5 }}>
         <span style={{ color: THEME.textPrimary, fontWeight: 700, marginRight: 6 }}>{creator.name}</span>
-        {post.caption}
+        {post.caption} <span style={{ color: THEME.blue }}>{tagOf(creator)}</span>
       </div>
       <button onClick={() => onOpenComments(post, creator)} className="block px-3.5 pb-3.5" style={{ fontFamily: SANS, fontSize: 12, color: THEME.textMuted }}>
         View all {commentCount} comments
@@ -304,6 +366,8 @@ export default function PickMeApp() {
   const [follows, setFollows] = useState([]);
   const [pickedIds, setPickedIds] = useState([]);
   const [likedPosts, setLikedPosts] = useState([]);
+  const [savedPosts, setSavedPosts] = useState([]);
+  const [pickRequests, setPickRequests] = useState([]);
   const [comments, setComments] = useState({});
   const [commentsFor, setCommentsFor] = useState(null); // {post, creator}
   const [activeChat, setActiveChat] = useState(null);
@@ -311,7 +375,9 @@ export default function PickMeApp() {
   const [activeTab, setActiveTab] = useState("All");
   const [viewingCreator, setViewingCreator] = useState(null);
   const [pickTarget, setPickTarget] = useState(null);
-  const [call, setCall] = useState(null); // {creator, phase, seconds, minimized, muted, cameraOff}
+  const [call, setCall] = useState(null); // {creator, phase, seconds, minimized, muted, cameraOff, password, participants}
+  const [callPanel, setCallPanel] = useState(null); // null | "people" | "comments"
+  const [callComments, setCallComments] = useState([]);
   const [toasts, setToasts] = useState([]);
   const [authMode, setAuthMode] = useState("signup");
   const [formName, setFormName] = useState("");
@@ -332,11 +398,15 @@ export default function PickMeApp() {
       const v = await safeGet("vault");
       const f = await safeGet("follows");
       const pk = await safeGet("pickedIds");
+      const sv = await safeGet("savedPosts");
+      const pr = await safeGet("pickRequests");
       if (p) setProfile(p);
       if (b) setBank(b);
       if (v) setVault(v);
       if (f) setFollows(f);
       if (pk) setPickedIds(pk);
+      if (sv) setSavedPosts(sv);
+      if (pr) setPickRequests(pr);
       setReady(true);
     })();
   }, []);
@@ -346,6 +416,17 @@ export default function PickMeApp() {
   useEffect(() => { if (ready) safeSet("vault", vault); }, [vault, ready]);
   useEffect(() => { if (ready) safeSet("follows", follows); }, [follows, ready]);
   useEffect(() => { if (ready) safeSet("pickedIds", pickedIds); }, [pickedIds, ready]);
+  useEffect(() => { if (ready) safeSet("savedPosts", savedPosts); }, [savedPosts, ready]);
+  useEffect(() => { if (ready) safeSet("pickRequests", pickRequests); }, [pickRequests, ready]);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setPickRequests((reqs) =>
+        reqs.map((r) => (r.status === "pending" && Date.now() > r.respondBy ? { ...r, status: "expired" } : r))
+      );
+    }, 30000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (call && call.phase === "live") {
@@ -367,6 +448,7 @@ export default function PickMeApp() {
       professions: formProfessions,
       subscribed: false,
       pickFee: 5,
+      autoAccept: false,
       joinedAt: Date.now(),
     });
     setBank({ balance: 100, transactions: [{ id: "t0", type: "credit", amount: 100, note: "Welcome credit", ts: Date.now() }] });
@@ -385,19 +467,36 @@ export default function PickMeApp() {
     setPickTarget(creator);
   }
 
-  function confirmPick(creator) {
+  function confirmPick(creator, password) {
     setPickTarget(null);
     setBank((b) => ({
       balance: +(b.balance - creator.pickFee).toFixed(2),
       transactions: [{ id: Math.random().toString(36).slice(2), type: "debit", amount: creator.pickFee, note: "Pick with " + creator.name, ts: Date.now() }, ...b.transactions],
     }));
     setPickedIds((ids) => (ids.includes(creator.id) ? ids : [creator.id, ...ids]));
-    setCall({ creator, phase: "connecting", seconds: 0, minimized: false, muted: false, cameraOff: false });
+    pushToast("You now have instant access to " + creator.name + "'s PickMe page.");
+    setCall({ creator, phase: "connecting", seconds: 0, minimized: false, muted: false, cameraOff: false, password: password || null, participants: [] });
     setTimeout(() => setCall((c) => (c ? { ...c, phase: "live" } : c)), 1400);
+  }
+
+  function addCallParticipant(creator) {
+    setCall((c) => (c && !c.participants.some((p) => p.id === creator.id) ? { ...c, participants: [...c.participants, creator] } : c));
   }
 
   function toggleLike(postId) {
     setLikedPosts((ids) => (ids.includes(postId) ? ids.filter((x) => x !== postId) : [...ids, postId]));
+  }
+
+  function toggleSave(postId) {
+    setSavedPosts((ids) => {
+      const has = ids.includes(postId);
+      pushToast(has ? "Removed from saved." : "Saved. You can view this anytime but can't download it.");
+      return has ? ids.filter((x) => x !== postId) : [postId, ...ids];
+    });
+  }
+
+  function sharePost(post, creator) {
+    pushToast("Link to " + creator.name + "'s post copied. Share it anywhere.");
   }
 
   function openComments(post, creator) {
@@ -435,13 +534,39 @@ export default function PickMeApp() {
 
   function simulateIncomingPick() {
     if (!profile) return;
-    const fee = profile.subscribed ? profile.pickFee : 5;
-    const share = profile.subscribed ? fee * 0.8 : 3;
-    setBank((b) => ({
-      balance: +(b.balance + share).toFixed(2),
-      transactions: [{ id: Math.random().toString(36).slice(2), type: "credit", amount: share, note: "Picked by a fan", ts: Date.now() }, ...b.transactions],
-    }));
-    pushToast("You were Picked. " + money(share) + " added to your Bank.");
+    const fee = profile.pickFee;
+    const share = profile.subscribed ? +(fee * 0.8).toFixed(2) : 3;
+    const id = Math.random().toString(36).slice(2);
+    const req = { id, fee, share, createdAt: Date.now(), respondBy: Date.now() + 48 * 3600 * 1000, status: "pending" };
+    setPickRequests((r) => [req, ...r]);
+    if (profile.autoAccept) {
+      pushToast("New Pick request, auto-accepting in a few seconds.");
+      setTimeout(() => acceptPickRequest(id), 4000);
+    } else {
+      pushToast("New Pick request waiting for your response. 48hrs to respond.");
+    }
+  }
+
+  function acceptPickRequest(id) {
+    setPickRequests((reqs) => {
+      const req = reqs.find((r) => r.id === id);
+      if (!req || req.status !== "pending") return reqs;
+      setBank((b) => ({
+        balance: +(b.balance + req.share).toFixed(2),
+        transactions: [{ id: Math.random().toString(36).slice(2), type: "credit", amount: req.share, note: "Picked by a fan, accepted", ts: Date.now() }, ...b.transactions],
+      }));
+      pushToast("Accepted. " + money(req.share) + " added to your Bank.");
+      return reqs.map((r) => (r.id === id ? { ...r, status: "accepted" } : r));
+    });
+  }
+
+  function declinePickRequest(id) {
+    setPickRequests((reqs) => reqs.map((r) => (r.id === id ? { ...r, status: "declined" } : r)));
+    pushToast("Pick request declined.");
+  }
+
+  function toggleAutoAccept() {
+    setProfile((p) => ({ ...p, autoAccept: !p.autoAccept }));
   }
 
   function topUp(amount) {
@@ -462,11 +587,11 @@ export default function PickMeApp() {
         balance: +(b.balance - 50).toFixed(2),
         transactions: [{ id: Math.random().toString(36).slice(2), type: "debit", amount: 50, note: "Pick-Plus subscription", ts: Date.now() }, ...b.transactions],
       }));
-      setProfile((p) => ({ ...p, subscribed: true, pickFee: 50 }));
-      pushToast("Pick-Plus active. You can now set your own Pick fee.");
+      setProfile((p) => ({ ...p, subscribed: true, pickFee: 10 }));
+      pushToast("Pick-Plus active. You get Picked for $10 and keep 80%.");
     } else {
       setProfile((p) => ({ ...p, subscribed: false, pickFee: 5 }));
-      pushToast("Pick-Plus cancelled. Your Pick fee is locked at $5.");
+      pushToast("Pick-Plus cancelled. You get Picked for $5 and keep $3.");
     }
   }
 
@@ -481,9 +606,9 @@ export default function PickMeApp() {
   // ---------- AUTH / ONBOARDING ----------
   if (!profile) {
     return (
-      <div className="w-full flex flex-col" style={{ height: 620, background: THEME.bg, borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
+      <div className="w-full flex flex-col" style={{ height: 620, background: THEME.surface, borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
         <div className="flex-1 overflow-y-auto px-6 py-8">
-          <div style={{ fontFamily: SANS, fontWeight: 900, fontSize: 30, color: THEME.textPrimary, letterSpacing: "-0.03em" }}>PickMe</div>
+          <div style={{ fontFamily: "Georgia, 'Times New Roman', serif", fontStyle: "italic", fontWeight: 700, fontSize: 30, color: THEME.textPrimary }}>PickMe</div>
           <div style={{ color: THEME.textSecondary, fontSize: 13.5, marginTop: 6, marginBottom: 28 }}>
             Set up your page. Any profession welcome.
           </div>
@@ -528,7 +653,7 @@ export default function PickMeApp() {
           <button
             onClick={completeSignup}
             className="w-full rounded-full py-3"
-            style={{ background: THEME.gold, color: "#241A08", fontWeight: 800, fontSize: 14.5 }}
+            style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 14.5 }}
           >
             Create my page
           </button>
@@ -542,16 +667,40 @@ export default function PickMeApp() {
     const mm = String(Math.floor(call.seconds / 60)).padStart(2, "0");
     const ss = String(call.seconds % 60).padStart(2, "0");
     return (
-      <div className="w-full flex flex-col justify-between" style={{ height: 620, background: "#070B14", borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
+      <div className="w-full flex flex-col justify-between relative" style={{ height: 620, background: "#070B14", borderRadius: 20, overflow: "hidden", fontFamily: SANS }}>
         <div className="flex items-center justify-between px-4 pt-4">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-full" style={{ background: "#00000055" }}>
             <div style={{ width: 6, height: 6, borderRadius: 999, background: call.phase === "live" ? THEME.red : THEME.textMuted }} />
             <span style={{ fontFamily: MONO, fontSize: 12, color: "#fff" }}>{call.phase === "live" ? mm + ":" + ss : "connecting"}</span>
+            {call.password && (
+              <span className="flex items-center gap-0.5" style={{ marginLeft: 2 }}>
+                <KeyRound size={11} color={THEME.gold} />
+              </span>
+            )}
           </div>
-          <button onClick={() => setCall((c) => ({ ...c, minimized: true }))} className="p-2 rounded-full" style={{ background: "#00000055" }}>
-            <Minimize2 size={16} color="#fff" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button onClick={() => setCallPanel(callPanel === "people" ? null : "people")} className="p-2 rounded-full" style={{ background: callPanel === "people" ? THEME.gold : "#00000055" }}>
+              <Link2 size={15} color="#fff" />
+            </button>
+            <button onClick={() => setCallPanel(callPanel === "comments" ? null : "comments")} className="p-2 rounded-full" style={{ background: callPanel === "comments" ? THEME.gold : "#00000055" }}>
+              <MessageCircle size={15} color="#fff" />
+            </button>
+            <button onClick={() => setCall((c) => ({ ...c, minimized: true }))} className="p-2 rounded-full" style={{ background: "#00000055" }}>
+              <Minimize2 size={16} color="#fff" />
+            </button>
+          </div>
         </div>
+
+        {call.participants.length > 0 && (
+          <div className="flex items-center gap-1.5 px-4 pt-3">
+            {call.participants.map((p) => (
+              <div key={p.id} className="rounded-full flex items-center justify-center" style={{ width: 26, height: 26, background: avatarColor(p.name) + "55", border: "1px solid " + avatarColor(p.name) }}>
+                <span style={{ color: "#fff", fontSize: 9, fontWeight: 700 }}>{initials(p.name)}</span>
+              </div>
+            ))}
+            <span style={{ color: "#8A93A3", fontSize: 10.5, marginLeft: 2 }}>in conference</span>
+          </div>
+        )}
 
         <div className="flex-1 flex items-center justify-center flex-col gap-3">
           <div
@@ -570,6 +719,46 @@ export default function PickMeApp() {
         >
           <span style={{ color: "#5E6C82", fontSize: 10.5 }}>you</span>
         </div>
+
+        {callPanel === "people" && (
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl px-4 pt-4 pb-5" style={{ background: "#12161F", maxHeight: 260, overflowY: "auto" }}>
+            <div className="flex items-center justify-between mb-3">
+              <span style={{ color: "#fff", fontWeight: 700, fontSize: 13.5 }}>Add to conference</span>
+              <button onClick={() => setCallPanel(null)}><X size={16} color="#8A93A3" /></button>
+            </div>
+            {MOCK_CREATORS.filter((c) => follows.includes(c.id) && c.id !== call.creator.id).length === 0 && (
+              <div style={{ color: "#8A93A3", fontSize: 12 }}>Follow people to add them here.</div>
+            )}
+            <div className="flex flex-col gap-1">
+              {MOCK_CREATORS.filter((c) => follows.includes(c.id) && c.id !== call.creator.id).map((c) => {
+                const added = call.participants.some((p) => p.id === c.id);
+                return (
+                  <button key={c.id} onClick={() => addCallParticipant(c)} disabled={added} className="flex items-center gap-2.5 px-2 py-2 rounded-xl">
+                    <Avatar name={c.name} size={30} />
+                    <span style={{ color: "#fff", fontSize: 13, flex: 1, textAlign: "left" }}>{c.name}</span>
+                    {added ? <Check size={15} color={THEME.green} /> : <Plus size={15} color="#8A93A3" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {callPanel === "comments" && (
+          <div className="absolute inset-x-0 bottom-0 rounded-t-2xl px-4 pt-4 pb-3 flex flex-col" style={{ background: "#12161F", maxHeight: 260 }}>
+            <div className="flex items-center justify-between mb-3">
+              <span style={{ color: "#fff", fontWeight: 700, fontSize: 13.5 }}>Session comments</span>
+              <button onClick={() => setCallPanel(null)}><X size={16} color="#8A93A3" /></button>
+            </div>
+            <div className="flex-1 overflow-y-auto flex flex-col gap-2 mb-2">
+              {callComments.length === 0 && <div style={{ color: "#8A93A3", fontSize: 12 }}>No comments yet.</div>}
+              {callComments.map((c) => (
+                <div key={c.id} style={{ color: "#fff", fontSize: 12.5 }}>{c.text}</div>
+              ))}
+            </div>
+            <CallCommentInput onSend={(text) => setCallComments((cc) => [...cc, { id: Math.random().toString(36).slice(2), text }])} />
+          </div>
+        )}
 
         <div className="flex items-center justify-center gap-4 pb-8 pt-4">
           <button onClick={() => setCall((c) => ({ ...c, muted: !c.muted }))} className="p-3.5 rounded-full" style={{ background: call.muted ? THEME.red : "#1A2740" }}>
@@ -619,7 +808,7 @@ export default function PickMeApp() {
       )}
 
       {pickTarget && (
-        <PickSheet creator={pickTarget} onCancel={() => setPickTarget(null)} onConfirm={() => confirmPick(pickTarget)} />
+        <PickSheet creator={pickTarget} onCancel={() => setPickTarget(null)} onConfirm={(password) => confirmPick(pickTarget, password)} />
       )}
 
       {commentsFor && (
@@ -665,39 +854,28 @@ export default function PickMeApp() {
                 onToggleLike={toggleLike}
                 onOpenComments={openComments}
                 commentCount={(comments[item.post.id] || MOCK_COMMENTS.slice(0, 2)).length}
+                saved={savedPosts.includes(item.post.id)}
+                onToggleSave={toggleSave}
+                onShare={sharePost}
               />
             ))}
+            {feedItems.length === 0 && (
+              <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
+                <Sparkles size={22} color={THEME.textMuted} />
+                <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>No posts in this career tab yet.</div>
+              </div>
+            )}
           </div>
         </>
       )}
 
       {screen === "search" && (
-        <>
-          <TopBar title="Search" />
-          <div className="px-4 pt-3 pb-2 flex-shrink-0">
-            <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border }}>
-              <Search size={15} color={THEME.textMuted} />
-              <span style={{ color: THEME.textMuted, fontSize: 13.5 }}>Search people or professions</span>
-            </div>
-          </div>
-          <div className="flex-1 overflow-y-auto px-4 py-2">
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>ALL PROFESSIONS</div>
-            <div className="flex flex-col gap-2">
-              {PROFESSIONS.map((p) => {
-                const count = MOCK_CREATORS.filter((c) => c.professions.includes(p)).length;
-                return (
-                  <button key={p} onClick={() => { setActiveTab(p); setScreen("feed"); }} className="flex items-center justify-between px-3.5 py-3 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-                    <span style={{ color: THEME.textPrimary, fontSize: 14, fontWeight: 600 }}>{p}</span>
-                    <div className="flex items-center gap-1.5">
-                      <span style={{ color: THEME.textMuted, fontSize: 12 }}>{count}</span>
-                      <ChevronRight size={15} color={THEME.textMuted} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </>
+        <SearchScreen
+          savedPosts={savedPosts}
+          onOpenProfile={setViewingCreator}
+          onOpenComments={openComments}
+          onSelectProfession={(p) => { setActiveTab(p); setScreen("feed"); }}
+        />
       )}
 
       {screen === "vault" && (
@@ -705,7 +883,16 @@ export default function PickMeApp() {
       )}
 
       {screen === "bank" && (
-        <BankScreen bank={bank} profile={profile} onTopUp={topUp} onSubscribeToggle={toggleSubscription} onSimulatePick={simulateIncomingPick} />
+        <BankScreen
+          bank={bank}
+          profile={profile}
+          onTopUp={topUp}
+          onSubscribeToggle={toggleSubscription}
+          onSimulatePick={simulateIncomingPick}
+          pickRequests={pickRequests}
+          onAcceptRequest={acceptPickRequest}
+          onDeclineRequest={declinePickRequest}
+        />
       )}
 
       {screen === "profile" && (
@@ -733,9 +920,8 @@ export default function PickMeApp() {
       {screen === "settings" && (
         <SettingsScreen
           profile={profile}
-          setProfile={setProfile}
-          bank={bank}
           onSubscribeToggle={toggleSubscription}
+          onToggleAutoAccept={toggleAutoAccept}
           onSimulatePick={simulateIncomingPick}
           onBack={() => setScreen("profile")}
           onLogout={() => { setProfile(null); safeSet("profile", null); }}
@@ -782,7 +968,7 @@ function ProfileOverlay({ creator, onClose, onPick, following, onToggleFollow })
         <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "4px 0 8px" }}>ABOUT</div>
         <div style={{ color: THEME.textSecondary, fontSize: 13.5, lineHeight: 1.5, marginBottom: 18 }}>{creator.bio}</div>
 
-        <button onClick={() => onPick(creator)} className="w-full rounded-full py-2.5 flex items-center justify-center gap-1.5 mb-6" style={{ background: THEME.gold, color: "#241A08", fontWeight: 800, fontSize: 13.5 }}>
+        <button onClick={() => onPick(creator)} className="w-full rounded-full py-2.5 flex items-center justify-center gap-1.5 mb-6" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 13.5 }}>
           Pick <span style={{ fontFamily: MONO }}>{money(creator.pickFee)}</span>
         </button>
 
@@ -800,6 +986,8 @@ function ProfileOverlay({ creator, onClose, onPick, following, onToggleFollow })
 }
 
 function PickSheet({ creator, onCancel, onConfirm }) {
+  const [wantsPassword, setWantsPassword] = useState(false);
+  const [password, setPassword] = useState("");
   return (
     <div className="absolute inset-0 z-40 flex items-end" style={{ background: "#00000088" }}>
       <div className="w-full rounded-t-3xl px-5 pt-5 pb-6" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
@@ -818,13 +1006,55 @@ function PickSheet({ creator, onCancel, onConfirm }) {
           <span style={{ color: THEME.textSecondary, fontSize: 13 }}>Pick fee</span>
           <span style={{ fontFamily: MONO, color: THEME.gold, fontWeight: 700, fontSize: 15 }}>{money(creator.pickFee)}</span>
         </div>
-        <div style={{ color: THEME.textMuted, fontSize: 11.5, marginBottom: 18 }}>
+
+        <button onClick={() => setWantsPassword((w) => !w)} className="flex items-center gap-2 px-1 py-2.5 w-full" >
+          <div className="flex items-center justify-center rounded" style={{ width: 18, height: 18, background: wantsPassword ? THEME.gold : THEME.surface, border: "1px solid " + (wantsPassword ? THEME.gold : THEME.border) }}>
+            {wantsPassword && <Check size={12} color="#fff" />}
+          </div>
+          <KeyRound size={14} color={THEME.textSecondary} />
+          <span style={{ color: THEME.textSecondary, fontSize: 12.5 }}>Password protect this room</span>
+        </button>
+        {wantsPassword && (
+          <input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Set a room password"
+            className="w-full rounded-lg px-3 py-2 mb-2"
+            style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 13, outline: "none" }}
+          />
+        )}
+
+        <div style={{ color: THEME.textMuted, fontSize: 11.5, marginBottom: 18, marginTop: 6 }}>
           Opens a video call by default. You can minimize into your workspace once connected.
         </div>
-        <button onClick={onConfirm} className="w-full rounded-full py-3" style={{ background: THEME.gold, color: "#241A08", fontWeight: 800, fontSize: 14.5 }}>
+        <button onClick={() => onConfirm(wantsPassword ? password : null)} className="w-full rounded-full py-3" style={{ background: THEME.gold, color: "#fff", fontWeight: 800, fontSize: 14.5 }}>
           Confirm and connect
         </button>
       </div>
+    </div>
+  );
+}
+
+function CallCommentInput({ onSend }) {
+  const [text, setText] = useState("");
+  function submit() {
+    if (!text.trim()) return;
+    onSend(text.trim());
+    setText("");
+  }
+  return (
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <input
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+        placeholder="Write a comment..."
+        className="flex-1 rounded-full px-3.5 py-2"
+        style={{ background: "#1A2740", border: "1px solid #2A3B57", color: "#fff", fontSize: 12.5, outline: "none" }}
+      />
+      <button onClick={submit} className="p-2 rounded-full flex-shrink-0" style={{ background: THEME.gold }}>
+        <Send size={14} color="#fff" />
+      </button>
     </div>
   );
 }
@@ -874,7 +1104,7 @@ function CommentsOverlay({ post, creator, comments, onClose, onSubmit }) {
           className="p-2 rounded-full flex-shrink-0"
           style={{ background: THEME.gold }}
         >
-          <Send size={15} color="#241A08" />
+          <Send size={15} color="#fff" />
         </button>
       </div>
     </div>
@@ -936,7 +1166,7 @@ function ChatThread({ creator, onClose }) {
           <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>Say hi to {creator.name}.</div>
         )}
         {messages.map((m) => (
-          <div key={m.id} className="self-end rounded-2xl px-3.5 py-2" style={{ background: THEME.gold, color: "#241A08", maxWidth: "75%" }}>
+          <div key={m.id} className="self-end rounded-2xl px-3.5 py-2" style={{ background: THEME.gold, color: "#fff", maxWidth: "75%" }}>
             <span style={{ fontSize: 13 }}>{m.text}</span>
           </div>
         ))}
@@ -951,7 +1181,7 @@ function ChatThread({ creator, onClose }) {
           style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textPrimary, fontSize: 13, outline: "none" }}
         />
         <button onClick={send} className="p-2 rounded-full flex-shrink-0" style={{ background: THEME.gold }}>
-          <Send size={15} color="#241A08" />
+          <Send size={15} color="#fff" />
         </button>
       </div>
     </div>
@@ -998,7 +1228,140 @@ function PickedBoardScreen({ creators, onBack, onOpenProfile }) {
   );
 }
 
+function SearchScreen({ savedPosts, onOpenProfile, onOpenComments, onSelectProfession }) {
+  const [tab, setTab] = useState("explore");
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase().replace(/^#/, "");
+
+  const matchedCreators = q
+    ? MOCK_CREATORS.filter((c) => c.name.toLowerCase().includes(q) || c.professions.some((p) => p.toLowerCase().includes(q)))
+    : [];
+  const matchedPosts = q
+    ? MOCK_CREATORS.flatMap((c) => c.posts.map((p) => ({ post: p, creator: c }))).filter(
+        ({ post, creator }) => post.caption.toLowerCase().includes(q) || tagOf(creator).toLowerCase().includes("#" + q)
+      )
+    : [];
+
+  const savedItems = MOCK_CREATORS.flatMap((c) => c.posts.map((p) => ({ post: p, creator: c }))).filter(({ post }) =>
+    savedPosts.includes(post.id)
+  );
+
+  return (
+    <>
+      <TopBar title="Search" />
+      <div className="flex gap-2 px-4 pt-3 pb-1 flex-shrink-0">
+        <Chip active={tab === "explore"} onClick={() => setTab("explore")} small>Explore</Chip>
+        <Chip active={tab === "saved"} onClick={() => setTab("saved")} small>Saved ({savedPosts.length})</Chip>
+      </div>
+
+      {tab === "explore" && (
+        <>
+          <div className="px-4 pt-2 pb-2 flex-shrink-0">
+            <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border }}>
+              <Search size={15} color={THEME.textMuted} />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search users, careers, or #description"
+                className="flex-1 bg-transparent outline-none"
+                style={{ color: THEME.textPrimary, fontSize: 13.5 }}
+              />
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            {q ? (
+              <>
+                {matchedCreators.length > 0 && (
+                  <>
+                    <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "6px 0 10px" }}>USERS &amp; CAREERS</div>
+                    <div className="flex flex-col gap-2 mb-4">
+                      {matchedCreators.map((c) => (
+                        <button key={c.id} onClick={() => onOpenProfile(c)} className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
+                          <Avatar name={c.name} size={34} />
+                          <div className="text-left">
+                            <div style={{ color: THEME.textPrimary, fontSize: 13.5, fontWeight: 700 }}>{c.name}</div>
+                            <div style={{ color: THEME.textMuted, fontSize: 11.5 }}>{c.professions.join(", ")}</div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+                {matchedPosts.length > 0 && (
+                  <>
+                    <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", margin: "6px 0 10px" }}>POSTS</div>
+                    <div className="grid grid-cols-2 gap-2.5 mb-4">
+                      {matchedPosts.map(({ post, creator }) => {
+                        const col = avatarColor(creator.name);
+                        return (
+                          <button key={post.id} onClick={() => onOpenComments(post, creator)} className="rounded-xl p-3 flex flex-col justify-end text-left" style={{ height: 100, background: "linear-gradient(135deg," + col + "22," + col + "05)", border: "1px solid " + col + "30" }}>
+                            <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{post.caption.slice(0, 50)}...</span>
+                            <span style={{ color: col, fontSize: 10, fontWeight: 700, marginTop: 4 }}>{tagOf(creator)}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+                {matchedCreators.length === 0 && matchedPosts.length === 0 && (
+                  <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>No matches for "{query}".</div>
+                )}
+              </>
+            ) : (
+              <>
+                <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>ALL PROFESSIONS</div>
+                <div className="flex flex-col gap-2">
+                  {PROFESSIONS.map((p) => {
+                    const count = MOCK_CREATORS.filter((c) => c.professions.includes(p)).length;
+                    return (
+                      <button key={p} onClick={() => onSelectProfession(p)} className="flex items-center justify-between px-3.5 py-3 rounded-xl" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
+                        <span style={{ color: THEME.textPrimary, fontSize: 14, fontWeight: 600 }}>{p}</span>
+                        <div className="flex items-center gap-1.5">
+                          <span style={{ color: THEME.textMuted, fontSize: 12 }}>{count}</span>
+                          <ChevronRight size={15} color={THEME.textMuted} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
+
+      {tab === "saved" && (
+        <div className="flex-1 overflow-y-auto px-4 py-3">
+          <div style={{ color: THEME.textMuted, fontSize: 11.5, lineHeight: 1.5, marginBottom: 14 }}>
+            Saved for later reference. Saved items can't be downloaded, but links can still be shared.
+          </div>
+          {savedItems.length === 0 ? (
+            <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
+              <Bookmark size={24} color={THEME.textMuted} />
+              <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Bookmark a post to find it here later.</div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2.5">
+              {savedItems.map(({ post, creator }) => {
+                const col = avatarColor(creator.name);
+                return (
+                  <button key={post.id} onClick={() => onOpenComments(post, creator)} className="rounded-xl p-3 flex flex-col justify-end text-left" style={{ height: 100, background: "linear-gradient(135deg," + col + "22," + col + "05)", border: "1px solid " + col + "30" }}>
+                    <span style={{ color: THEME.textSecondary, fontSize: 11, lineHeight: 1.4 }}>{post.caption.slice(0, 50)}...</span>
+                    <span style={{ color: col, fontSize: 10, fontWeight: 700, marginTop: 4 }}>{tagOf(creator)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
+  const [query, setQuery] = useState("");
+
   if (!subscribed) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center gap-3">
@@ -1007,7 +1370,7 @@ function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
         <div style={{ color: THEME.textMuted, fontSize: 12.5, lineHeight: 1.5 }}>
           Subscribe to Pick-Plus to store files shared during your Pick sessions.
         </div>
-        <button onClick={onUpgrade} className="rounded-full px-5 py-2.5 mt-2" style={{ background: THEME.gold, color: "#241A08", fontWeight: 700, fontSize: 13 }}>
+        <button onClick={onUpgrade} className="rounded-full px-5 py-2.5 mt-2" style={{ background: THEME.gold, color: "#fff", fontWeight: 700, fontSize: 13 }}>
           Go to Settings
         </button>
       </div>
@@ -1022,9 +1385,26 @@ function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
     }));
   }
 
+  const q = query.trim().toLowerCase();
+  const sessions = q
+    ? vault.sessions.filter((s) => s.withName.toLowerCase().includes(q) || s.files.some((f) => f.name.toLowerCase().includes(q)))
+    : vault.sessions;
+
   return (
     <>
       <TopBar title="Vault" />
+      <div className="px-4 pt-3 pb-1 flex-shrink-0">
+        <div className="flex items-center gap-2 rounded-full px-3.5 py-2.5" style={{ background: THEME.surfaceRaised, border: "1px solid " + THEME.border }}>
+          <Search size={14} color={THEME.textMuted} />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search past conversations and files"
+            className="flex-1 bg-transparent outline-none"
+            style={{ color: THEME.textPrimary, fontSize: 13 }}
+          />
+        </div>
+      </div>
       <div className="flex-1 overflow-y-auto px-4 py-3">
         {vault.sessions.length === 0 && (
           <div className="flex flex-col items-center justify-center gap-2 mt-16 text-center px-6">
@@ -1032,7 +1412,10 @@ function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
             <div style={{ color: THEME.textMuted, fontSize: 12.5 }}>Files shared during a Pick session will show up here.</div>
           </div>
         )}
-        {vault.sessions.map((s) => (
+        {vault.sessions.length > 0 && sessions.length === 0 && (
+          <div style={{ color: THEME.textMuted, fontSize: 12.5, textAlign: "center", marginTop: 24 }}>No matches for "{query}".</div>
+        )}
+        {sessions.map((s) => (
           <div key={s.withId} className="mb-4 rounded-xl overflow-hidden" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
             <div className="flex items-center gap-2.5 px-3.5 py-3" style={{ borderBottom: "1px solid " + THEME.borderSoft }}>
               <Avatar name={s.withName} size={30} />
@@ -1061,12 +1444,20 @@ function VaultScreen({ vault, subscribed, setVault, onUpgrade }) {
   );
 }
 
-function BankScreen({ bank, profile, onTopUp, onSubscribeToggle, onSimulatePick }) {
+function timeLeft(ms) {
+  if (ms <= 0) return "expired";
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h + "h " + m + "m left";
+}
+
+function BankScreen({ bank, profile, onTopUp, onSubscribeToggle, onSimulatePick, pickRequests, onAcceptRequest, onDeclineRequest }) {
+  const pending = pickRequests.filter((r) => r.status === "pending");
   return (
     <>
       <TopBar title="Bank" />
       <div className="flex-1 overflow-y-auto px-4 py-4">
-        <div className="rounded-2xl px-5 py-5 mb-4" style={{ background: "linear-gradient(135deg,#1A2740,#121B2E)", border: "1px solid " + THEME.border }}>
+        <div className="rounded-2xl px-5 py-5 mb-4" style={{ background: "linear-gradient(135deg,#F1E4CE,#FFFFFF)", border: "1px solid " + THEME.border }}>
           <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 600 }}>Available balance</div>
           <div style={{ fontFamily: MONO, color: THEME.textPrimary, fontSize: 32, fontWeight: 700, marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{money(bank.balance)}</div>
           <div className="flex gap-2 mt-4">
@@ -1079,17 +1470,38 @@ function BankScreen({ bank, profile, onTopUp, onSubscribeToggle, onSimulatePick 
           <div>
             <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
             <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
-              {profile.subscribed ? "Active, you keep 80% of your Pick fee" : "$50/month, keep 80% of your Pick fee"}
+              {profile.subscribed ? "Active — get Picked for $10, keep 80%" : "$50/month — get Picked for $10, keep 80% (vs. $5 kept $3 unsubscribed)"}
             </div>
           </div>
           <button
             onClick={onSubscribeToggle}
             className="rounded-full px-4 py-2"
-            style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#241A08", fontWeight: 700, fontSize: 12 }}
+            style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12 }}
           >
             {profile.subscribed ? "Cancel" : "Subscribe"}
           </button>
         </div>
+
+        {pending.length > 0 && (
+          <>
+            <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>PICK REQUESTS</div>
+            <div className="flex flex-col gap-2 mb-5">
+              {pending.map((r) => (
+                <div key={r.id} className="rounded-xl px-4 py-3" style={{ background: THEME.pink + "12", border: "1px solid " + THEME.pink + "40" }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13 }}>You were Picked</span>
+                    <span style={{ fontFamily: MONO, color: THEME.gold, fontWeight: 700, fontSize: 13 }}>+{money(r.share)}</span>
+                  </div>
+                  <div style={{ color: THEME.textMuted, fontSize: 11, marginBottom: 10 }}>{timeLeft(r.respondBy - Date.now())} to respond, or it reverses to the Picker's Vault</div>
+                  <div className="flex gap-2">
+                    <button onClick={() => onDeclineRequest(r.id)} className="flex-1 rounded-full py-1.5" style={{ background: THEME.surface, border: "1px solid " + THEME.border, color: THEME.textSecondary, fontSize: 12, fontWeight: 700 }}>Decline</button>
+                    <button onClick={() => onAcceptRequest(r.id)} className="flex-1 rounded-full py-1.5" style={{ background: THEME.gold, color: "#fff", fontSize: 12, fontWeight: 700 }}>Accept</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         <button onClick={onSimulatePick} className="w-full flex items-center justify-center gap-2 rounded-xl py-3 mb-5" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
           <Bell size={14} color={THEME.textMuted} />
@@ -1179,7 +1591,7 @@ function MyProfileScreen({ profile, bank, pickedCount, onSettings, onOpenPicked 
   );
 }
 
-function SettingsScreen({ profile, setProfile, bank, onSubscribeToggle, onSimulatePick, onBack, onLogout }) {
+function SettingsScreen({ profile, onSubscribeToggle, onToggleAutoAccept, onSimulatePick, onBack, onLogout }) {
   return (
     <>
       <TopBar title="Settings" right={
@@ -1188,38 +1600,33 @@ function SettingsScreen({ profile, setProfile, bank, onSubscribeToggle, onSimula
         </button>
       } />
       <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div style={{ color: THEME.textSecondary, fontSize: 12.5, lineHeight: 1.5, marginBottom: 18 }}>
+          All settings can be accessed here. Our subscription tier gives access to advanced features and a Bank where you can store your money to carry out secure transactions with Picked Users.
+        </div>
+
         <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>SUBSCRIPTION</div>
         <div className="rounded-xl px-4 py-3.5 mb-6 flex items-center justify-between" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
           <div>
             <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Pick-Plus</div>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>{profile.subscribed ? "Active" : "Not subscribed"}</div>
+            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>
+              {profile.subscribed ? "Active — get Picked for $10, keep 80%" : "$50/month — get Picked for $10, keep 80%. Unsubscribed: $5, keep $3"}
+            </div>
           </div>
-          <button onClick={onSubscribeToggle} className="rounded-full px-4 py-2" style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#241A08", fontWeight: 700, fontSize: 12 }}>
+          <button onClick={onSubscribeToggle} className="rounded-full px-4 py-2" style={{ background: profile.subscribed ? THEME.surfaceRaised : THEME.gold, border: "1px solid " + (profile.subscribed ? THEME.border : THEME.gold), color: profile.subscribed ? THEME.textPrimary : "#fff", fontWeight: 700, fontSize: 12 }}>
             {profile.subscribed ? "Cancel" : "Subscribe"}
           </button>
         </div>
 
-        {profile.subscribed && (
-          <>
-            <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>YOUR PICK FEE</div>
-            <div className="rounded-xl px-4 py-4 mb-6" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
-              <div className="flex items-center justify-between mb-3">
-                <span style={{ color: THEME.textSecondary, fontSize: 12.5 }}>Set your own fee if you feel you are worth more</span>
-                <span style={{ fontFamily: MONO, color: THEME.gold, fontWeight: 700, fontSize: 16 }}>{money(profile.pickFee)}</span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="300"
-                step="5"
-                value={profile.pickFee}
-                onChange={(e) => setProfile((p) => ({ ...p, pickFee: parseInt(e.target.value, 10) }))}
-                className="w-full"
-              />
-              <div style={{ color: THEME.textMuted, fontSize: 10.5, marginTop: 6 }}>Platform keeps 20% of whatever you set. You keep 80%.</div>
-            </div>
-          </>
-        )}
+        <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>PICK REQUESTS</div>
+        <div className="rounded-xl px-4 py-3.5 mb-6 flex items-center justify-between" style={{ background: THEME.surface, border: "1px solid " + THEME.borderSoft }}>
+          <div>
+            <div style={{ color: THEME.textPrimary, fontWeight: 700, fontSize: 13.5 }}>Auto-accept Picks</div>
+            <div style={{ color: THEME.textMuted, fontSize: 11.5, marginTop: 1 }}>Auto-connect after a countdown, instead of manually accepting each request</div>
+          </div>
+          <button onClick={onToggleAutoAccept} className="flex items-center rounded-full flex-shrink-0" style={{ width: 42, height: 24, padding: 3, background: profile.autoAccept ? THEME.gold : THEME.border }}>
+            <div className="rounded-full" style={{ width: 18, height: 18, background: "#fff", marginLeft: profile.autoAccept ? 18 : 0, transition: "margin 0.15s" }} />
+          </button>
+        </div>
 
         <div style={{ color: THEME.textMuted, fontSize: 11.5, fontWeight: 700, letterSpacing: "0.04em", marginBottom: 10 }}>DEMO TOOLS</div>
         <button onClick={onSimulatePick} className="w-full flex items-center justify-center gap-2 rounded-xl py-3 mb-6" style={{ background: THEME.surface, border: "1px dashed " + THEME.border }}>
